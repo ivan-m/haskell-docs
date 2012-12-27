@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             0.1.1.0
+version:             0.2.0.0
 synopsis:            A program to find and display the docs of a name from a
                      given module.
 description:         Given a module name and a name, it will find and display
@@ -44,7 +44,7 @@ description:         Given a module name and a name, it will find and display
                      .
                      /CONTRIBUTION AND ISSUES/
                      .
-                     Issues/ideas/contributions please make a Github issue: <http://github.com/chrisdone/haskell-docs/issues>
+                     Issues\/ideas\/contributions please make a Github issue: <http://github.com/chrisdone/haskell-docs/issues>
                      .
 license:             BSD3
 license-file:        LICENSE
