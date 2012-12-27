@@ -1,6 +1,7 @@
 {-# OPTIONS -Wall -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE CPP #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
@@ -40,7 +41,11 @@ import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Documentation.Haddock
+#if __GLASGOW_HASKELL__ <= 761
 import           DynFlags (defaultLogAction)
+#else
+import           DynFlags (defaultFlushOut, defaultFatalMessager)
+#endif
 import           GHC hiding (flags, verbosity)
 import           GHC.Paths (libdir)
 import           Module
@@ -174,7 +179,11 @@ formatDoc = trim . go where
   go (DocOrderedList i) = unlines (zipWith (\i x -> show i ++ ". " ++ go x) [1..] i)
   go (DocDefList xs) = unlines (map (\(i,x) -> go i ++ ". " ++ go x) xs)
   go (DocCodeBlock block) = unlines (map ("    " ++) (lines (go block))) ++ "\n"
+#if MIN_VERSION_haddock(2,13,1)
+  go (DocHyperlink (Hyperlink url label)) = maybe url (\l -> l ++ "[" ++ url ++ "]") label
+#else
   go (DocURL url) = url
+#endif
   go (DocPic pic) = pic
   go (DocAName name) = name
   go (DocExamples exs) = unlines (map formatExample exs)
@@ -223,7 +232,11 @@ getHaddockInterfacesByPackage = mapM (readInterfaceFile freshNameCache) . haddoc
 -- | Run an action with an initialized GHC package set.
 withInitializedPackages :: (DynFlags -> IO a) -> IO a
 withInitializedPackages cont = do
+#if __GLASGOW_HASKELL__ <= 761
   dflags <- defaultErrorHandler defaultLogAction $ runGhc (Just libdir) $ do
+#else
+  dflags <- defaultErrorHandler defaultFatalMessager defaultFlushOut $ runGhc (Just libdir) $ do
+#endif
     dflags <- getSessionDynFlags
     setSessionDynFlags dflags
     return dflags
