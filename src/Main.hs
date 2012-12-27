@@ -41,7 +41,7 @@ import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Documentation.Haddock
-#if __GLASGOW_HASKELL__ <= 706
+#if __GLASGOW_HASKELL__ < 706
 import           DynFlags (defaultLogAction)
 #else
 import           DynFlags (defaultFlushOut, defaultFatalMessager)
@@ -232,7 +232,7 @@ getHaddockInterfacesByPackage = mapM (readInterfaceFile freshNameCache) . haddoc
 -- | Run an action with an initialized GHC package set.
 withInitializedPackages :: (DynFlags -> IO a) -> IO a
 withInitializedPackages cont = do
-#if __GLASGOW_HASKELL__ <= 706
+#if __GLASGOW_HASKELL__ < 706
   dflags <- defaultErrorHandler defaultLogAction $ runGhc (Just libdir) $ do
 #else
   dflags <- defaultErrorHandler defaultFatalMessager defaultFlushOut $ runGhc (Just libdir) $ do
