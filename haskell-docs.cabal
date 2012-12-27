@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            A program to find and display the docs of a name from a
                      given module.
 description:         Given a module name and a name, it will find and display
@@ -25,7 +25,7 @@ description:         Given a module name and a name, it will find and display
                      so too will this program be, to GHC, and to Haddock. I suggest
                      installing like this:
                      .
-                     > cabal-dev install haskell-docs --constraint haddock==2.10.0
+                     > cabal install haskell-docs --constraint haddock==2.10.0
                      .
                      But replace the 2.10.0 with the version that haddock --version gives you.
                      .

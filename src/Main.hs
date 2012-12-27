@@ -102,16 +102,19 @@ printWithPackage d printPackage name mname package = do
       flip anyM files $ \interfaceFile ->
         case filter ((==mname) . moduleName . instMod) (ifInstalledIfaces interfaceFile) of
           [] -> error "Couldn't find an interface for that module in the package description."
-          interfaces -> anyM (printWithInterface d printPackage package name) interfaces
+          interfaces -> anyM (printWithInterface d printPackage package name mname) interfaces
 
 -- | Print the documentation from the given interface.
-printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> InstalledInterface -> IO Bool
-printWithInterface d printPackage package name interface = do
+printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> ModuleName -> InstalledInterface
+                   -> IO Bool
+printWithInterface d printPackage package name mname interface = do
   case M.lookup name docMap of
-    Nothing ->
+    Nothing -> do
       case lookup name (map (getOccString &&& id) (instExports interface)) of
-        Just subname -> descendSearch d name subname package
-        Nothing -> do
+        Just subname
+          | moduleName (nameModule subname) /= moduleName (instMod interface) ->
+            descendSearch d name subname package
+        _ -> do
           putStrLn $ "Couldn't find name ``" ++ name ++ "'' in Haddock interface: " ++
                      moduleNameString (moduleName (instMod interface))
           return False
