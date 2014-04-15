@@ -184,7 +184,11 @@ formatDoc = trim . go where
 #else
   go (DocURL url) = url
 #endif
+#if __GLASGOW_HASKELL__ < 708
   go (DocPic pic) = pic
+#else
+  go (DocPic pic) = show pic
+#endif
   go (DocAName name) = name
   go (DocExamples exs) = unlines (map formatExample exs)
 
@@ -248,4 +252,8 @@ withInitializedPackages cont = do
 
 instance Show ModuleName where show = show . moduleNameString
 instance Show OccName where show = show . occNameString
+#if __GLASGOW_HASKELL__ < 708
 deriving instance Show (Doc String)
+#else
+instance Show (Doc String) where show = formatDoc
+#endif
