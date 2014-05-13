@@ -7,10 +7,16 @@ description:         Given a module name and a name, it will find and display
                      .
                      /EXAMPLE USAGE/
                      .
-                     > $ haskell-docs Data.List.Split split
+                     > $ haskell-docs getdoc Data.List.Split split
                      > Split a list according to the given splitting strategy. This is
                      >  how to "run" a Splitter that has been built using the other
                      >  combinators.
+                     .
+                     Options to GHC (for example to specify the package database for a cabal
+                     sandbox) may be passed using '-g':
+                     .
+                     > $ haskell-docs getdoc -g '-no-user-package-db' -g '-package-db /somewhere/.cabal-sandbox/x86_64-linux-ghc-7.6.3-packages.conf.d' Safe findJust
+                     > findJust op = fromJust . find op
                      .
                      /INSTALLATION/
                      .

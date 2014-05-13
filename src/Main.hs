@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
@@ -53,22 +54,102 @@ import           Name
 import           PackageConfig
 import           Packages
 import           System.Environment
+import           qualified SrcLoc
+import           Control.Exception (Exception, Handler(..), ErrorCall(..))
+import           qualified Control.Exception as E
+import           Data.Version (showVersion)
+import           System.Console.GetOpt (OptDescr(..), ArgDescr(..), ArgOrder(..))
+import           qualified System.Console.GetOpt as O
+import           Data.Typeable (Typeable)
+import           System.Exit (exitFailure)
+import           System.IO (hPutStr, hPutStrLn, stderr)
+import           Paths_haskell_docs
+
+-- Command line argument parsing code (from this point down to main, and including the body of main)
+-- were adapted from ghc-mod's code: https://github.com/kazu-yamamoto/ghc-mod/blob/master/src/GHCMod.hs
+data Options = Options { ghcOpts :: [String] }
+
+defaultOptions :: Options
+defaultOptions = Options { ghcOpts = [] }
+
+progVersion :: String
+progVersion = "haskell-docs version " ++ showVersion version ++ "\n"
+
+ghcOptHelp :: String
+ghcOptHelp = " [-g GHC_opt1 -g GHC_opt2 ...] "
+
+usage :: String
+usage =    progVersion
+        ++ "Usage:\n"
+        ++ "\t haskell-docs getdoc" ++ ghcOptHelp ++ "<modulename> <name> [<package name>]\n"
+        ++ "\t haskell-docs version\n"
+        ++ "\t haskell-docs help\n"
+        ++ "\n"
+
+argspec :: [OptDescr (Options -> Options)]
+argspec = [ Option "g" ["ghcOpt"]
+            (ReqArg (\g opts -> opts { ghcOpts = g : ghcOpts opts }) "ghcOpt")
+            "GHC options"
+          ]
+
+parseArgs :: [OptDescr (Options -> Options)] -> [String] -> (Options, [String])
+parseArgs spec argv
+    = case O.getOpt Permute spec argv of
+        (o,n,[]  ) -> (foldr id defaultOptions o, n)
+        (_,_,errs) -> E.throw (CmdArg errs)
+
+data HaskellDocsError = SafeList
+                 | WrongNrArguments String
+                 | NoSuchCommand String
+                 | CmdArg [String] deriving (Show, Typeable)
+
+instance Exception HaskellDocsError
 
 -- | Main entry point.
 main :: IO ()
-main = do
-  args <- getArgs
-  case args of
-    [mname,name,pname] -> withInitializedPackages $ \d -> void $
-                            printDocumentation d name (mkModuleName mname) (Just pname) Nothing
-    [mname,name] -> withInitializedPackages $ \d -> void $
-                      printDocumentation d name (mkModuleName mname) Nothing Nothing
-    _ -> error "arguments: <modulename> <name> [<package name>]"
+main = flip E.catches handlers $ do
+    args <- getArgs
+    let (opt, cmdArg) = parseArgs argspec args
+    let cmdArg0 = cmdArg !. 0
+        cmdArg1 = cmdArg !. 1
+        cmdArg2 = cmdArg !. 2
+        cmdArg3 = cmdArg !. 3
+        remainingArgs = tail cmdArg
+    case cmdArg0 of
+      "getdoc"     -> case (length remainingArgs) of
+                         2 -> withInitializedPackages (ghcOpts opt) $ \d ->
+                                        void $ printDocumentation d cmdArg2 (mkModuleName cmdArg1) Nothing Nothing
+                         3 -> withInitializedPackages (ghcOpts opt) $ \d ->
+                                        void $ printDocumentation d cmdArg2 (mkModuleName cmdArg1) (Just cmdArg3) Nothing
+                         _ -> E.throw (WrongNrArguments cmdArg0)
+      "help"    -> putStrLn $ O.usageInfo usage argspec
+      "version" -> putStrLn progVersion
+      cmd       -> E.throw (NoSuchCommand cmd)
+  where
+    handlers = [Handler (handleThenExit handler1), Handler (handleThenExit handler2)]
+    handleThenExit handler e = handler e >> exitFailure
+    handler1 :: ErrorCall -> IO ()
+    handler1 = print -- for debug
+    handler2 :: HaskellDocsError -> IO ()
+    handler2 SafeList = printUsage
+    handler2 (WrongNrArguments cmd) = do
+        hPutStrLn stderr $ "\"" ++ cmd ++ "\": Wrong number of arguments"
+        printUsage
+    handler2 (NoSuchCommand cmd) = do
+        hPutStrLn stderr $ "\"" ++ cmd ++ "\" not supported"
+        printUsage
+    handler2 (CmdArg errs) = do
+        mapM_ (hPutStr stderr) errs
+        printUsage
+    printUsage = hPutStrLn stderr $ '\n' : O.usageInfo usage argspec
+    xs !. idx
+      | length xs <= idx = E.throw SafeList
+      | otherwise = xs !! idx
 
 -- | Print documentation with an initialized package set.
-printDocumentationInitialized :: String -> ModuleName -> Maybe String -> IO Bool
-printDocumentationInitialized x y z =
-  withInitializedPackages $ \d ->
+printDocumentationInitialized :: [String] -> String -> ModuleName -> Maybe String -> IO Bool
+printDocumentationInitialized opts x y z =
+  withInitializedPackages opts $ \d ->
     printDocumentation d x y z Nothing
 
 -- | Print the documentation of a name in the given module.
@@ -234,16 +315,20 @@ getHaddockInterfacesByPackage :: PackageConfig -> IO [Either String InterfaceFil
 getHaddockInterfacesByPackage = mapM (readInterfaceFile freshNameCache) . haddockInterfaces
 
 -- | Run an action with an initialized GHC package set.
-withInitializedPackages :: (DynFlags -> IO a) -> IO a
-withInitializedPackages cont = do
+withInitializedPackages :: [String] -> (DynFlags -> IO a) -> IO a
+withInitializedPackages opts cont = do
 #if __GLASGOW_HASKELL__ < 706
   dflags <- defaultErrorHandler defaultLogAction $ runGhc (Just libdir) $ do
 #else
   dflags <- defaultErrorHandler defaultFatalMessager defaultFlushOut $ runGhc (Just libdir) $ do
 #endif
     dflags <- getSessionDynFlags
-    setSessionDynFlags dflags
-    return dflags
+
+    (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc opts)
+
+    setSessionDynFlags dflags'
+
+    return dflags'
   (dflags,packageids) <- initPackages dflags
   cont dflags
 
