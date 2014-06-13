@@ -46,7 +46,7 @@ import           DynFlags (defaultLogAction)
 #else
 import           DynFlags (defaultFlushOut, defaultFatalMessager)
 #endif
-import           GHC hiding (flags, verbosity)
+import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
 import           Module
 import           Name
@@ -107,31 +107,29 @@ printWithPackage d printPackage name mname package = do
       flip anyM files $ \interfaceFile ->
         case filter ((==mname) . moduleName . instMod) (ifInstalledIfaces interfaceFile) of
           [] -> error "Couldn't find an interface for that module in the package description."
-          interfaces -> anyM (printWithInterface d printPackage package name mname) interfaces
+          interfaces -> anyM (printWithInterface d printPackage package name) interfaces
 
 -- | Print the documentation from the given interface.
-printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> ModuleName -> InstalledInterface
+printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> InstalledInterface
                    -> IO Bool
-printWithInterface d printPackage package name mname interface = do
+printWithInterface df printPackage package name interface = do
   case M.lookup name docMap of
     Nothing -> do
       case lookup name (map (getOccString &&& id) (instExports interface)) of
         Just subname
           | moduleName (nameModule subname) /= moduleName (instMod interface) ->
-            descendSearch d name subname package
+            descendSearch df name subname package
         _ -> do
           putStrLn $ "Couldn't find name ``" ++ name ++ "'' in Haddock interface: " ++
                      moduleNameString (moduleName (instMod interface))
           return False
-    Just doc -> do when printPackage $
-                     putStrLn $ "Package: " ++ showPackageName (sourcePackageId package)
-                   putStrLn (formatDoc doc)
-                   printArgs interface name
-                   return True
+    Just d -> do when printPackage $
+                   putStrLn $ "Package: " ++ showPackageName (sourcePackageId package)
+                 putStrLn (formatDoc d)
+                 printArgs interface name
+                 return True
 
   where docMap = interfaceNameMap interface
-
-        printName x = moduleNameString (moduleName (nameModule x)) ++ "." ++ getOccString x
 
 -- | Print the documentation of the arguments.
 printArgs :: InstalledInterface -> String -> IO ()
@@ -164,38 +162,49 @@ descendSearch d name qname package = do
 
 -- | Format some documentation to plain text.
 formatDoc :: Doc String -> String
-formatDoc = trim . go where
-  go DocEmpty = ""
-  go (DocAppend a b) = go a ++ go b
-  go (DocString str) = normalize str
-  go (DocParagraph p) = go p ++ "\n"
-  go (DocIdentifier i) = i
-  go (DocIdentifierUnchecked (mname,occname)) =
-    moduleNameString mname ++ "." ++ occNameString occname
-  go (DocModule m) = m
-  go (DocEmphasis e) = "*" ++ go e ++ "*"
-  go (DocMonospaced e) = "`" ++ go e ++ "`"
-  go (DocUnorderedList i) = unlines (map (("* " ++) . go) i)
-  go (DocOrderedList i) = unlines (zipWith (\i x -> show i ++ ". " ++ go x) [1..] i)
-  go (DocDefList xs) = unlines (map (\(i,x) -> go i ++ ". " ++ go x) xs)
-  go (DocCodeBlock block) = unlines (map ("    " ++) (lines (go block))) ++ "\n"
+formatDoc = trim . doc where
+
+-- | Render the doc.
+doc :: Doc String -> String
+doc DocEmpty = ""
+doc (DocAppend a b) = doc a ++ doc b
+doc (DocString str) = normalize str
+doc (DocParagraph p) = doc p ++ "\n"
+doc (DocIdentifier i) = i
+#if __GLASGOW_HASKELL__ > 702
+doc (DocIdentifierUnchecked (mname,occname)) =
+  moduleNameString mname ++ "." ++ occNameString occname
+#endif
+doc (DocModule m) = m
+doc (DocEmphasis e) = "*" ++ doc e ++ "*"
+doc (DocMonospaced e) = "`" ++ doc e ++ "`"
+doc (DocUnorderedList i) = unlines (map (("* " ++) . doc) i)
+doc (DocOrderedList i) = unlines (zipWith (\j x -> show j ++ ". " ++ doc x) [1 :: Int ..] i)
+doc (DocDefList xs) = unlines (map (\(i,x) -> doc i ++ ". " ++ doc x) xs)
+doc (DocCodeBlock block) = unlines (map ("    " ++) (lines (doc block))) ++ "\n"
 #if MIN_VERSION_haddock(2,13,1)
-  go (DocHyperlink (Hyperlink url label)) = maybe url (\l -> l ++ "[" ++ url ++ "]") label
+doc (DocHyperlink (Hyperlink url label)) = maybe url (\l -> l ++ "[" ++ url ++ "]") label
 #else
-  go (DocURL url) = url
+doc (DocURL url) = url
 #endif
 #if __GLASGOW_HASKELL__ < 708
-  go (DocPic pic) = pic
+doc (DocPic pic) = pic
 #else
-  go (DocPic pic) = show pic
+doc (DocPic pic) = show pic
 #endif
-  go (DocAName name) = name
-  go (DocExamples exs) = unlines (map formatExample exs)
+doc (DocAName name) = name
+doc (DocExamples exs) = unlines (map formatExample exs)
+doc (DocWarning d) = "Warning: " ++ doc d
+doc (DocBold d) = "**" ++ doc d ++ "**"
+doc (DocProperty p) = "Property: " ++ p
+-- The header type is unexported, so this constructor is useless.
+doc (DocHeader _) = ""
 
-  normalize = go where
-    go (' ':' ':cs) = go (' ':cs)
-    go (c:cs)       = c : go cs
-    go []           = []
+normalize :: [Char] -> [Char]
+normalize = go where
+  go (' ':' ':cs) = go (' ':cs)
+  go (c:cs)       = c : go cs
+  go []           = []
 
 -- | Trim either side of a string.
 trim :: [Char] -> [Char]
@@ -220,8 +229,10 @@ interfaceNameMap iface =
 -- | Get a mapping from names to doc string of that name from a
 -- Haddock interface.
 interfaceArgMap :: InstalledInterface -> Map String (Map Int (Doc Name))
+#if MIN_VERSION_haddock(2,13,1)
 interfaceArgMap iface =
   M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
+#endif
 
 -- | Search for a module's package, returning suggestions if not
 -- found.
@@ -236,16 +247,19 @@ getHaddockInterfacesByPackage = mapM (readInterfaceFile freshNameCache) . haddoc
 -- | Run an action with an initialized GHC package set.
 withInitializedPackages :: (DynFlags -> IO a) -> IO a
 withInitializedPackages cont = do
+  dflags <- run (do dflags <- getSessionDynFlags
+                    _ <- setSessionDynFlags dflags
+                    return dflags)
+  (dflags',_packageids) <- initPackages dflags
+  cont dflags'
+
 #if __GLASGOW_HASKELL__ < 706
-  dflags <- defaultErrorHandler defaultLogAction $ runGhc (Just libdir) $ do
+run :: Ghc a -> IO a
+run = defaultErrorHandler defaultLogAction . runGhc (Just libdir)
 #else
-  dflags <- defaultErrorHandler defaultFatalMessager defaultFlushOut $ runGhc (Just libdir) $ do
+run :: Ghc a -> IO a
+run = defaultErrorHandler defaultFatalMessager defaultFlushOut . runGhc (Just libdir)
 #endif
-    dflags <- getSessionDynFlags
-    setSessionDynFlags dflags
-    return dflags
-  (dflags,packageids) <- initPackages dflags
-  cont dflags
 
 --------------------------------------------------------------------------------
 -- Utilities and missing instances

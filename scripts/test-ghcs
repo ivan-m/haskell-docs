@@ -1,0 +1,19 @@
+set -e
+
+# for v in `ls /opt/ghc/`
+# do
+v=/opt/ghc/7.8.2
+  echo "Testing against GHC $v ..."
+  oldpath=$PATH
+  PATH=/opt/ghc/$v/bin:$PATH
+  echo "Setting PATH ..."
+  cabal clean > /dev/null
+  echo "Cabal installing with -O0 ..."
+  ghc --version
+  ghc-pkg list haddock
+  cabal install --dependencies-only --ghc-options="-O0" -j4 > /dev/null
+  cabal build --ghc-options="-O0" -j4 # > /dev/null
+  PATH=$oldpath
+# done
+
+echo "Tested all GHCs."
