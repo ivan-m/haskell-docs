@@ -18,6 +18,7 @@ import qualified Data.Map as M
 import           Documentation.Haddock
 import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
+import           GhcMonad (liftIO)
 import           Module
 import           Name
 import           PackageConfig
@@ -36,18 +37,18 @@ printDocumentationInitialized x y z =
     printDocumentation d x y z Nothing
 
 -- | Print the documentation of a name in the given module.
-printDocumentation :: DynFlags -> String -> ModuleName -> Maybe String -> Maybe PackageConfig -> IO Bool
+printDocumentation :: DynFlags -> String -> ModuleName -> Maybe String -> Maybe PackageConfig -> Ghc Bool
 printDocumentation d name mname mpname previous = do
-  result <- getPackagesByModule d mname
+  result <- liftIO (getPackagesByModule d mname)
   case result of
     Left _suggestions -> error "Couldn't find that module. Suggestions are forthcoming."
     Right [package]   -> printWithPackage d False name mname package
     Right packages    ->
       case mpname of
         Nothing -> do
-          putStrLn $ "Ambiguous module, belongs to more than one package: " ++
-                     unwords (map (showPackageName . sourcePackageId) packages) ++
-                     "\nContinuing anyway... "
+          liftIO (putStrLn $ "Ambiguous module, belongs to more than one package: " ++
+                             unwords (map (showPackageName . sourcePackageId) packages) ++
+                             "\nContinuing anyway... ")
           anyM (printWithPackage d True name mname) (filter (not . isPrevious) packages)
         Just pname -> do
           case find ((== pname) . showPackageName . sourcePackageId) packages of
@@ -61,9 +62,9 @@ showPackageName :: PackageIdentifier -> String
 showPackageName = packageIdString . mkPackageId
 
 -- | Print the documentation with the given package.
-printWithPackage :: DynFlags -> Bool -> String -> ModuleName -> PackageConfig -> IO Bool
+printWithPackage :: DynFlags -> Bool -> String -> ModuleName -> PackageConfig -> Ghc Bool
 printWithPackage d printPackage name mname package = do
-  interfaceFiles <- getHaddockInterfacesByPackage package
+  interfaceFiles <- liftIO (getHaddockInterfacesByPackage package)
   case (lefts interfaceFiles,rights interfaceFiles) of
     ([],[])        -> error "Found no interface files."
     (errs@(_:_),_) -> error $ "Couldn't parse interface file(s): " ++ unlines errs
@@ -75,7 +76,7 @@ printWithPackage d printPackage name mname package = do
 
 -- | Print the documentation from the given interface.
 printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> InstalledInterface
-                   -> IO Bool
+                   -> Ghc Bool
 printWithInterface df printPackage package name interface = do
   case M.lookup name docMap of
     Nothing -> do
@@ -84,26 +85,26 @@ printWithInterface df printPackage package name interface = do
           | moduleName (nameModule subname) /= moduleName (instMod interface) ->
             descendSearch df name subname package
         _ -> do
-          putStrLn $ "Couldn't find name ``" ++ name ++ "'' in Haddock interface: " ++
-                     moduleNameString (moduleName (instMod interface))
+          liftIO (putStrLn $ "Couldn't find name ``" ++ name ++ "'' in Haddock interface: " ++
+                             moduleNameString (moduleName (instMod interface)))
           return False
-    Just d -> do when printPackage $
-                   putStrLn $ "Package: " ++ showPackageName (sourcePackageId package)
-                 putStrLn (formatDoc d)
+    Just d -> do liftIO (when printPackage $
+                           putStrLn $ "Package: " ++ showPackageName (sourcePackageId package))
+                 liftIO (putStrLn (formatDoc d))
                  printArgs interface name
                  return True
 
   where docMap = interfaceNameMap interface
 
 -- | Print the documentation of the arguments.
-printArgs :: InstalledInterface -> String -> IO ()
+printArgs :: InstalledInterface -> String -> Ghc ()
 printArgs interface name = do
   case M.lookup name (interfaceArgMap interface) of
     Nothing -> return ()
     Just argMap ->
-      putStr $ unlines
-            $ map (\(i,x) -> formatArg i x)
-                  (map (second (fmap getOccString)) (M.toList argMap))
+      liftIO (putStr $ unlines
+                     $ map (\(i,x) -> formatArg i x)
+                           (map (second (fmap getOccString)) (M.toList argMap)))
 
   where formatArg i x = prefix ++
                         indentAfter (length prefix) (formatDoc x)
@@ -117,7 +118,7 @@ indentAfter i xs = intercalate "\n" (take 1 l ++ map (replicate (i-1) ' ' ++) (d
 -- | The module symbol doesn't actually exist in the module we
 -- intended, so we descend into the module that it does exist in and
 -- restart our search process.
-descendSearch :: DynFlags -> String -> Name -> PackageConfig -> IO Bool
+descendSearch :: DynFlags -> String -> Name -> PackageConfig -> Ghc Bool
 descendSearch d name qname package = do
   printDocumentation d name (moduleName (nameModule qname)) Nothing (Just package)
 
@@ -221,16 +222,16 @@ getPackagesByModule d m =
 
 -- | Get the Haddock interfaces of the given package.
 getHaddockInterfacesByPackage :: PackageConfig -> IO [Either String InterfaceFile]
-getHaddockInterfacesByPackage = mapM (readInterfaceFile freshNameCache) . haddockInterfaces
+getHaddockInterfacesByPackage =
+  mapM (readInterfaceFile freshNameCache) . haddockInterfaces
 
 -- | Run an action with an initialized GHC package set.
-withInitializedPackages :: (DynFlags -> IO a) -> IO a
-withInitializedPackages cont = do
-  dflags <- run (do dflags <- getSessionDynFlags
-                    _ <- setSessionDynFlags dflags
-                    return dflags)
-  (dflags',_packageids) <- initPackages dflags
-  cont dflags'
+withInitializedPackages :: (DynFlags -> Ghc a) -> IO a
+withInitializedPackages cont =
+  run (do dflags <- getSessionDynFlags
+          _ <- setSessionDynFlags dflags
+          (dflags',_packageids) <- liftIO (initPackages dflags)
+          cont dflags')
 
 #if __GLASGOW_HASKELL__ < 706
 run :: Ghc a -> IO a
