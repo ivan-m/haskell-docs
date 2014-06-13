@@ -195,7 +195,9 @@ doc (DocPic pic) = show pic
 doc (DocAName name) = name
 doc (DocExamples exs) = unlines (map formatExample exs)
 doc (DocWarning d) = "Warning: " ++ doc d
+#if MIN_VERSION_haddock(2,13,1)
 doc (DocProperty p) = "Property: " ++ p
+#endif
 #if __GLASGOW_HASKELL__ >= 708
 doc (DocBold d) = "**" ++ doc d ++ "**"
 -- The header type is unexported, so this constructor is useless.
@@ -232,6 +234,9 @@ interfaceNameMap iface =
 -- Haddock interface.
 interfaceArgMap :: InstalledInterface -> Map String (Map Int (Doc Name))
 #if MIN_VERSION_haddock(2,13,1)
+interfaceArgMap iface =
+  M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
+#else
 interfaceArgMap iface =
   M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
 #endif
