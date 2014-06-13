@@ -1,4 +1,4 @@
-{-# OPTIONS -Wall -fno-warn-orphans #-}
+{-# OPTIONS -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE CPP #-}
@@ -279,9 +279,3 @@ run = defaultErrorHandler defaultLogAction . runGhc (Just libdir)
 run :: Ghc a -> IO a
 run = defaultErrorHandler defaultFatalMessager defaultFlushOut . runGhc (Just libdir)
 #endif
-
---------------------------------------------------------------------------------
--- Utilities and missing instances
-
-instance Show ModuleName where show = show . moduleNameString
-instance Show OccName where show = show . occNameString
