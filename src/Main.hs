@@ -171,15 +171,6 @@ doc DocEmpty = ""
 doc (DocAppend a b) = doc a ++ doc b
 doc (DocString str) = normalize str
 doc (DocParagraph p) = doc p ++ "\n"
-#if MIN_VERSION_haddock(2,10,0)
-doc (DocIdentifier i) = i
-#else
-doc (DocIdentifier i) = intercalate "." i
-#endif
-#if MIN_VERSION_haddock(2,11,1)
-doc (DocIdentifierUnchecked (mname,occname)) =
-  moduleNameString mname ++ "." ++ occNameString occname
-#endif
 doc (DocModule m) = m
 doc (DocEmphasis e) = "*" ++ doc e ++ "*"
 doc (DocMonospaced e) = "`" ++ doc e ++ "`"
@@ -187,27 +178,33 @@ doc (DocUnorderedList i) = unlines (map (("* " ++) . doc) i)
 doc (DocOrderedList i) = unlines (zipWith (\j x -> show j ++ ". " ++ doc x) [1 :: Int ..] i)
 doc (DocDefList xs) = unlines (map (\(i,x) -> doc i ++ ". " ++ doc x) xs)
 doc (DocCodeBlock block) = unlines (map ("    " ++) (lines (doc block))) ++ "\n"
-#if MIN_VERSION_haddock(2,13,1)
+doc (DocAName name) = name
+doc (DocExamples exs) = unlines (map formatExample exs)
+
+#if MIN_VERSION_haddock(2,10,0)
+-- The header type is unexported, so this constructor is useless.
+doc (DocIdentifier i) = i
+doc (DocWarning d) = "Warning: " ++ doc d
+#else
+doc (DocPic pic) = pic
+doc (DocIdentifier i) = intercalate "." i
+#endif
+
+#if MIN_VERSION_haddock(2,11,0)
+doc (DocIdentifierUnchecked (mname,occname)) =
+  moduleNameString mname ++ "." ++ occNameString occname
+doc (DocPic pic) = show pic
+#endif
+
+#if MIN_VERSION_haddock(2,13,0)
 doc (DocHyperlink (Hyperlink url label)) = maybe url (\l -> l ++ "[" ++ url ++ "]") label
+doc (DocProperty p) = "Property: " ++ p
 #else
 doc (DocURL url) = url
 #endif
-#if MIN_VERSION_haddock(2,14,0)
-doc (DocPic pic) = show pic
-#else
-doc (DocPic pic) = pic
-#endif
-doc (DocAName name) = name
-doc (DocExamples exs) = unlines (map formatExample exs)
-#if MIN_VERSION_haddock(2,10,0)
-doc (DocWarning d) = "Warning: " ++ doc d
-#endif
-#if MIN_VERSION_haddock(2,13,1)
-doc (DocProperty p) = "Property: " ++ p
-#endif
+
 #if MIN_VERSION_haddock(2,14,0)
 doc (DocBold d) = "**" ++ doc d ++ "**"
--- The header type is unexported, so this constructor is useless.
 doc (DocHeader _) = ""
 #endif
 

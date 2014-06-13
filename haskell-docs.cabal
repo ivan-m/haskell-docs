@@ -62,9 +62,9 @@ executable haskell-docs
   hs-source-dirs:      src
   main-is:             Main.hs
   build-depends:       base > 4 && < 5,
-                       ghc,
+                       ghc > 7.2 && < 7.9,
                        ghc-paths,
-                       haddock,
+                       haddock >= 2.9 && < 2.15,
                        containers,
                        monad-loops
 
