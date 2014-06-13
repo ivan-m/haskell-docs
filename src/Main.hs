@@ -34,18 +34,13 @@ module Main where
 
 import           Control.Arrow
 import           Control.Monad
-import Control.Monad.Loops
+import           Control.Monad.Loops
 import           Data.Char
 import           Data.Either
 import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
 import           Documentation.Haddock
-#if __GLASGOW_HASKELL__ < 706
-import           DynFlags (defaultLogAction)
-#else
-import           DynFlags (defaultFlushOut, defaultFatalMessager)
-#endif
 import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
 import           Module
@@ -53,6 +48,12 @@ import           Name
 import           PackageConfig
 import           Packages
 import           System.Environment
+
+#if __GLASGOW_HASKELL__ < 706
+import           DynFlags (defaultLogAction)
+#else
+import           DynFlags (defaultFlushOut, defaultFatalMessager)
+#endif
 
 -- | Main entry point.
 main :: IO ()
@@ -170,8 +171,12 @@ doc DocEmpty = ""
 doc (DocAppend a b) = doc a ++ doc b
 doc (DocString str) = normalize str
 doc (DocParagraph p) = doc p ++ "\n"
+#if MIN_VERSION_haddock(2,10,0)
 doc (DocIdentifier i) = i
-#if __GLASGOW_HASKELL__ > 702
+#else
+doc (DocIdentifier i) = intercalate "." i
+#endif
+#if MIN_VERSION_haddock(2,11,1)
 doc (DocIdentifierUnchecked (mname,occname)) =
   moduleNameString mname ++ "." ++ occNameString occname
 #endif
@@ -187,18 +192,20 @@ doc (DocHyperlink (Hyperlink url label)) = maybe url (\l -> l ++ "[" ++ url ++ "
 #else
 doc (DocURL url) = url
 #endif
-#if __GLASGOW_HASKELL__ < 708
-doc (DocPic pic) = pic
-#else
+#if MIN_VERSION_haddock(2,14,0)
 doc (DocPic pic) = show pic
+#else
+doc (DocPic pic) = pic
 #endif
 doc (DocAName name) = name
 doc (DocExamples exs) = unlines (map formatExample exs)
+#if MIN_VERSION_haddock(2,10,0)
 doc (DocWarning d) = "Warning: " ++ doc d
+#endif
 #if MIN_VERSION_haddock(2,13,1)
 doc (DocProperty p) = "Property: " ++ p
 #endif
-#if __GLASGOW_HASKELL__ >= 708
+#if MIN_VERSION_haddock(2,14,0)
 doc (DocBold d) = "**" ++ doc d ++ "**"
 -- The header type is unexported, so this constructor is useless.
 doc (DocHeader _) = ""
@@ -226,21 +233,26 @@ formatExample (Example expression result) =
 -- | Get a mapping from names to doc string of that name from a
 -- Haddock interface.
 interfaceNameMap :: InstalledInterface -> Map String (Doc String)
+#if MIN_VERSION_haddock(2,10,0)
 interfaceNameMap iface =
   M.fromList (map (second (fmap getOccString) . first getOccString)
              (M.toList (instDocMap iface)))
+#else
+interfaceNameMap iface =
+  M.fromList (map (second (fmap getOccString . maybe DocEmpty id . fst) . first getOccString)
+             (M.toList (instDocMap iface)))
+#endif
 
 -- | Get a mapping from names to doc string of that name from a
 -- Haddock interface.
 interfaceArgMap :: InstalledInterface -> Map String (Map Int (Doc Name))
-#if MIN_VERSION_haddock(2,13,1)
+#if MIN_VERSION_haddock(2,10,0)
 interfaceArgMap iface =
   M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
 #else
-interfaceArgMap iface =
-  M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
+interfaceArgMap iface = M.fromList (map (second (const M.empty) . first getOccString)
+                                        (M.toList (instDocMap iface)))
 #endif
-
 -- | Search for a module's package, returning suggestions if not
 -- found.
 getPackagesByModule :: DynFlags -> ModuleName -> IO (Either [Module] [PackageConfig])
@@ -273,8 +285,3 @@ run = defaultErrorHandler defaultFatalMessager defaultFlushOut . runGhc (Just li
 
 instance Show ModuleName where show = show . moduleNameString
 instance Show OccName where show = show . occNameString
-#if __GLASGOW_HASKELL__ < 708
-deriving instance Show (Doc String)
-#else
-instance Show (Doc String) where show = formatDoc
-#endif
