@@ -1,19 +1,33 @@
 set -e
 
-# for v in `ls /opt/ghc/`
-# do
-v=/opt/ghc/7.8.2
-  echo "Testing against GHC $v ..."
-  oldpath=$PATH
-  PATH=/opt/ghc/$v/bin:$PATH
-  echo "Setting PATH ..."
-  cabal clean > /dev/null
-  echo "Cabal installing with -O0 ..."
-  ghc --version
-  ghc-pkg list haddock
-  cabal install --dependencies-only --ghc-options="-O0" -j4 > /dev/null
-  cabal build --ghc-options="-O0" -j4 # > /dev/null
-  PATH=$oldpath
-# done
+# 7.8.2
 
-echo "Tested all GHCs."
+echo "Testing against GHC 7.8.2 ..."
+oldpath=$PATH
+PATH=/opt/ghc/7.8.2/bin:$PATH
+cabal clean > /dev/null
+echo "Cabal installing with -O0 ..."
+ghc --version
+cabal install haddock-2.14.2
+ghc-pkg list haddock
+cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal build --ghc-options="-O0" -j4 # > /dev/null
+PATH=$oldpath
+
+# 7.6.3
+
+echo "Testing against GHC 7.6.3 ..."
+oldpath=$PATH
+PATH=/opt/ghc/7.6.3/bin:$PATH
+cabal clean > /dev/null
+echo "Cabal installing with -O0 ..."
+ghc --version
+cabal install haddock-2.13.2.1
+ghc-pkg list haddock
+cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal build --ghc-options="-O0" -j4 # > /dev/null
+PATH=$oldpath
+
+# 7.4.2
+
+# 7.2.2

@@ -195,10 +195,12 @@ doc (DocPic pic) = show pic
 doc (DocAName name) = name
 doc (DocExamples exs) = unlines (map formatExample exs)
 doc (DocWarning d) = "Warning: " ++ doc d
-doc (DocBold d) = "**" ++ doc d ++ "**"
 doc (DocProperty p) = "Property: " ++ p
+#if __GLASGOW_HASKELL__ >= 708
+doc (DocBold d) = "**" ++ doc d ++ "**"
 -- The header type is unexported, so this constructor is useless.
 doc (DocHeader _) = ""
+#endif
 
 normalize :: [Char] -> [Char]
 normalize = go where
