@@ -1,6 +1,7 @@
 {-# OPTIONS -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
@@ -21,6 +22,7 @@ import           GHC.Paths (libdir)
 import           GhcMonad (liftIO)
 import           Module
 import           Name
+import           Outputable
 import           PackageConfig
 import           Packages
 
@@ -72,29 +74,51 @@ printWithPackage d printPackage name mname package = do
       flip anyM files $ \interfaceFile ->
         case filter ((==mname) . moduleName . instMod) (ifInstalledIfaces interfaceFile) of
           [] -> error "Couldn't find an interface for that module in the package description."
-          interfaces -> anyM (printWithInterface d printPackage package name) interfaces
+          interfaces -> anyM (printWithInterface d printPackage package name mname) interfaces
 
 -- | Print the documentation from the given interface.
-printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> InstalledInterface
+printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> ModuleName -> InstalledInterface
                    -> Ghc Bool
-printWithInterface df printPackage package name interface = do
-  case M.lookup name docMap of
-    Nothing -> do
-      case lookup name (map (getOccString &&& id) (instExports interface)) of
-        Just subname
-          | moduleName (nameModule subname) /= moduleName (instMod interface) ->
-            descendSearch df name subname package
-        _ -> do
+printWithInterface df printPackage package name mname interface = do
+  case find ((==name).getOccString) (instExports interface) of
+    Nothing -> bail
+    Just qname ->
+      case M.lookup name docMap of
+        Nothing -> do
+          case lookup name (map (getOccString &&& id) (instExports interface)) of
+            Just subname
+              | moduleName (nameModule subname) /= moduleName (instMod interface) ->
+                descendSearch df name subname package
+            _ -> bail
+        Just d ->
+          do liftIO (when printPackage $
+                       putStrLn $ "Package: " ++ showPackageName (sourcePackageId package))
+             printType df mname qname name
+             liftIO (putStrLn (formatDoc d))
+             printArgs interface name
+             return True
+
+  where docMap = interfaceNameMap interface
+        bail = do
           liftIO (putStrLn $ "Couldn't find name ``" ++ name ++ "'' in Haddock interface: " ++
                              moduleNameString (moduleName (instMod interface)))
           return False
-    Just d -> do liftIO (when printPackage $
-                           putStrLn $ "Package: " ++ showPackageName (sourcePackageId package))
-                 liftIO (putStrLn (formatDoc d))
-                 printArgs interface name
-                 return True
 
-  where docMap = interfaceNameMap interface
+printType d mname qname name =
+  do graph <- depanal [] False
+     loaded <- load LoadAllTargets
+#if __GLASGOW_HASKELL__ == 702
+#else
+     setContext [IIDecl (simpleImportDecl mname)]
+#endif
+     names <- getNamesInScope
+     let m = (nameModule (head names))
+     i <- getModuleInfo m
+     mty <- lookupName (head (filter ((==name).getOccString) names))
+     case mty of
+       Just (AnId i) -> liftIO (do putStr (showppr d i ++ " :: ")
+                                   putStrLn (showppr d (idType i)))
+       _ -> liftIO (putStrLn "Unable to find type for identifier.")
 
 -- | Print the documentation of the arguments.
 printArgs :: InstalledInterface -> String -> Ghc ()
@@ -229,8 +253,9 @@ getHaddockInterfacesByPackage =
 withInitializedPackages :: (DynFlags -> Ghc a) -> IO a
 withInitializedPackages cont =
   run (do dflags <- getSessionDynFlags
-          _ <- setSessionDynFlags dflags
-          (dflags',_packageids) <- liftIO (initPackages dflags)
+          setSessionDynFlags (dflags { hscTarget = HscInterpreted
+                                      , ghcLink = LinkInMemory })
+          (dflags',packageids) <- liftIO (initPackages dflags)
           cont dflags')
 
 #if __GLASGOW_HASKELL__ < 706
@@ -239,4 +264,24 @@ run = defaultErrorHandler defaultLogAction . runGhc (Just libdir)
 #else
 run :: Ghc a -> IO a
 run = defaultErrorHandler defaultFatalMessager defaultFlushOut . runGhc (Just libdir)
+#endif
+
+showppr :: Outputable a => DynFlags -> a -> String
+showppr dflags = Documentation.Haddock.Docs.showSDocForUser dflags neverQualify . ppr
+
+sdoc :: DynFlags -> SDoc -> String
+sdoc dflags = Documentation.Haddock.Docs.showSDocForUser dflags neverQualify
+
+-- | Wraps 'Outputable.showSDocForUser'.
+#if __GLASGOW_HASKELL__ == 702
+showSDocForUser _ = Outputable.showSDocForUser
+#endif
+#if __GLASGOW_HASKELL__ == 704
+showSDocForUser _ = Outputable.showSDocForUser
+#endif
+#if __GLASGOW_HASKELL__ == 706
+showSDocForUser = Outputable.showSDocForUser
+#endif
+#if __GLASGOW_HASKELL__ == 708
+showSDocForUser = Outputable.showSDocForUser
 #endif
