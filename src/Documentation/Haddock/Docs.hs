@@ -1,36 +1,11 @@
 {-# OPTIONS -Wall #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE CPP #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
---
--- To build:
---
---     $ ghc --make HaskellDocs.hs -package ghc -o haskell-docs
---
--- Example usage:
---
---     $ ./haskell-docs System.IO getContents base
---     The “getContents” operation returns all user input as a single string,
---      which is read lazily as it is needed
---      (same as “hGetContents” “stdin”).
---
--- Using with GHCi
---
--- Move haskell-docs to ~/.cabal/bin. Then run the following in GHCi:
---
---     λ> :def doc \input -> return (":!haskell-docs " ++ input)
---
---     λ> :doc System.IO getContents base
---     The “getContents” operation returns all user input as a single string,
---      which is read lazily as it is needed
---      (same as “hGetContents” “stdin”).
---
--- Add the above :def to your ~/.ghci to have it on start-up.
 
-module Main where
+module Documentation.Haddock.Docs where
 
 import           Control.Arrow
 import           Control.Monad
@@ -47,24 +22,12 @@ import           Module
 import           Name
 import           PackageConfig
 import           Packages
-import           System.Environment
 
 #if __GLASGOW_HASKELL__ < 706
 import           DynFlags (defaultLogAction)
 #else
 import           DynFlags (defaultFlushOut, defaultFatalMessager)
 #endif
-
--- | Main entry point.
-main :: IO ()
-main = do
-  args <- getArgs
-  case args of
-    [mname,name,pname] -> withInitializedPackages $ \d -> void $
-                            printDocumentation d name (mkModuleName mname) (Just pname) Nothing
-    [mname,name] -> withInitializedPackages $ \d -> void $
-                      printDocumentation d name (mkModuleName mname) Nothing Nothing
-    _ -> error "arguments: <modulename> <name> [<package name>]"
 
 -- | Print documentation with an initialized package set.
 printDocumentationInitialized :: String -> ModuleName -> Maybe String -> IO Bool

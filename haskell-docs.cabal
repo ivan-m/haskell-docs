@@ -21,16 +21,10 @@ description:         Given a module name and a name, it will find and display
                      in your .cabal/config so that the necessary
                      .haddock files are generated.
                      .
-                     Haddock is very sensitive to the GHC version, and
-                     so too will this program be, to GHC, and to Haddock. I suggest
-                     installing like this:
-                     .
-                     > cabal install haskell-docs --constraint haddock==2.10.0
-                     .
-                     But replace the 2.10.0 with the version that haddock --version gives you.
-                     .
-                     I could perhaps instead have a flag for each GHC
-                     release back a few versions.
+                     Haddock is very sensitive to the GHC version. This program tries not to be. If
+                     you cannot install this package due to a version problem, open a Github issue.
+                     If the versions match up but the build fails, open a Github issue. Neither
+                     case should arise.
                      .
                      /USING WITH GHCI/
                      .
@@ -57,16 +51,22 @@ cabal-version:       >=1.8
 Homepage:            http://github.com/chrisdone/haskell-docs
 Bug-Reports:         http://github.com/chrisdone/haskell-docs/issues
 
-
-executable haskell-docs
+library
   hs-source-dirs:      src
-  main-is:             Main.hs
+  exposed-modules:     Documentation.Haddock.Docs
   build-depends:       base > 4 && < 5,
                        ghc > 7.2 && < 7.9,
                        ghc-paths,
                        haddock >= 2.9 && < 2.15,
                        containers,
                        monad-loops
+
+executable haskell-docs
+  hs-source-dirs:      src/main
+  main-is:             Main.hs
+  build-depends:       base > 4 && < 5,
+                       ghc > 7.2 && < 7.9,
+                       haskell-docs
 
 source-repository head
   type:        git
