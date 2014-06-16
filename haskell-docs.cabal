@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             3.0.1
+version:             3.0.2
 synopsis:            A program to find and display the docs of a name from a
                      given module.
 description:         Given a module name and a name, it will find and display
@@ -57,10 +57,22 @@ library
   build-depends:       base > 4 && < 5,
                        ghc > 7.2 && < 7.9,
                        ghc-paths,
-                       haddock >= 2.9 && < 2.15,
                        containers,
                        monad-loops,
                        optparse-applicative
+  if impl(ghc==7.8.*)
+    build-depends: haddock==2.14.*
+  if impl(ghc==7.6.*)
+    build-depends: haddock==2.13.*
+  if impl(ghc==7.4.*)
+    build-depends: haddock==2.11.*
+  if impl(ghc==7.2.*)
+    build-depends: haddock==2.9.*
+
+  if impl(ghc>=7.8)
+    build-depends: haddock
+  if impl(ghc<7.2)
+    build-depends: haddock
 
 executable haskell-docs
   hs-source-dirs:      src/main
