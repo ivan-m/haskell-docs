@@ -1,4 +1,4 @@
-{-# OPTIONS -Wall #-}
+{-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE StandaloneDeriving #-}
@@ -105,16 +105,14 @@ printWithInterface df printPackage package name mname interface = do
                              moduleNameString (moduleName (instMod interface)))
           return False
 
-printType d mname qname name =
-  do graph <- depanal [] False
-     loaded <- load LoadAllTargets
+printType d mname _qname name =
+  do _graph <- depanal [] False
+     _loaded <- load LoadAllTargets
 #if __GLASGOW_HASKELL__ == 702
 #else
      setContext [IIDecl (simpleImportDecl mname)]
 #endif
      names <- getNamesInScope
-     let m = (nameModule (head names))
-     i <- getModuleInfo m
      mty <- lookupName (head (filter ((==name).getOccString) names))
      case mty of
        Just (AnId i) -> liftIO (do putStr (showppr d i ++ " :: ")
@@ -255,9 +253,9 @@ withInitializedPackages :: [String] -> (DynFlags -> Ghc a) -> IO a
 withInitializedPackages ghcopts cont =
   run (do dflags <- getSessionDynFlags
           (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc ghcopts)
-          setSessionDynFlags (dflags' { hscTarget = HscInterpreted
-                                       , ghcLink = LinkInMemory })
-          (dflags'',packageids) <- liftIO (initPackages dflags')
+          _ <- setSessionDynFlags (dflags' { hscTarget = HscInterpreted
+                                            , ghcLink = LinkInMemory })
+          (dflags'',_packageids) <- liftIO (initPackages dflags')
           cont dflags'')
 
 #if __GLASGOW_HASKELL__ < 706
