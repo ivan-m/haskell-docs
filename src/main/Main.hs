@@ -6,14 +6,17 @@ import Control.Monad
 import Documentation.Haddock.Docs
 import GHC (mkModuleName)
 import System.Environment
+import Options.Applicative
 
--- | Main entry point.
-main :: IO ()
 main = do
-  args <- getArgs
-  case args of
-    [mname,name,pname] -> withInitializedPackages $ \d -> void $
-                            printDocumentation d name (mkModuleName mname) (Just pname) Nothing
-    [mname,name] -> withInitializedPackages $ \d -> void $
-                      printDocumentation d name (mkModuleName mname) Nothing Nothing
-    _ -> error "arguments: <modulename> <name> [<package name>]"
+    (mname, name, pname, ghcopts) <- execParser opts
+    withInitializedPackages ghcopts $ \d -> void $
+        printDocumentation d name (mkModuleName mname) pname Nothing
+ where
+   opts = info (helper <*> p) fullDesc
+   p = (\a b c d -> (a, b, c, d)) <$> pModuleName <*> pName <*> (optional pPackageName) <*> pGhcOptions
+
+   pModuleName  = argument str (metavar "<modulename>")
+   pName        = argument str (metavar "<name>")
+   pPackageName = argument str (metavar "<package name>")
+   pGhcOptions  = many $ strOption (long "ghc-options" <> short 'g')

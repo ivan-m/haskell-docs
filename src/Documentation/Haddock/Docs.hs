@@ -25,6 +25,7 @@ import           Name
 import           Outputable
 import           PackageConfig
 import           Packages
+import qualified SrcLoc
 
 #if __GLASGOW_HASKELL__ < 706
 import           DynFlags (defaultLogAction)
@@ -33,9 +34,9 @@ import           DynFlags (defaultFlushOut, defaultFatalMessager)
 #endif
 
 -- | Print documentation with an initialized package set.
-printDocumentationInitialized :: String -> ModuleName -> Maybe String -> IO Bool
-printDocumentationInitialized x y z =
-  withInitializedPackages $ \d ->
+printDocumentationInitialized :: String -> ModuleName -> Maybe String -> [String] -> IO Bool
+printDocumentationInitialized x y z ghcopts =
+  withInitializedPackages ghcopts $ \d ->
     printDocumentation d x y z Nothing
 
 -- | Print the documentation of a name in the given module.
@@ -250,13 +251,14 @@ getHaddockInterfacesByPackage =
   mapM (readInterfaceFile freshNameCache) . haddockInterfaces
 
 -- | Run an action with an initialized GHC package set.
-withInitializedPackages :: (DynFlags -> Ghc a) -> IO a
-withInitializedPackages cont =
+withInitializedPackages :: [String] -> (DynFlags -> Ghc a) -> IO a
+withInitializedPackages ghcopts cont =
   run (do dflags <- getSessionDynFlags
-          setSessionDynFlags (dflags { hscTarget = HscInterpreted
-                                      , ghcLink = LinkInMemory })
-          (dflags',packageids) <- liftIO (initPackages dflags)
-          cont dflags')
+          (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc ghcopts)
+          setSessionDynFlags (dflags' { hscTarget = HscInterpreted
+                                       , ghcLink = LinkInMemory })
+          (dflags'',packageids) <- liftIO (initPackages dflags')
+          cont dflags'')
 
 #if __GLASGOW_HASKELL__ < 706
 run :: Ghc a -> IO a
