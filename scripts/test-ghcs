@@ -1,32 +1,17 @@
 set -e
 
-# 7.8.2
+# 7.2.2
 
-echo "Testing against GHC 7.8.2 ..."
+echo "Testing against GHC 7.2.2 ..."
 oldpath=$PATH
-PATH=/opt/ghc/7.8.2/bin:$PATH
+PATH=/opt/ghc/7.2.2/bin:$PATH
 cabal clean > /dev/null
 echo "Cabal installing with -O0 ..."
 ghc --version
 # ghc-pkg unregister haddock || echo;
-# cabal install haddock==2.14.*
+# cabal install haddock==2.9.*
 ghc-pkg list haddock | grep haddock
-cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
-cabal build --ghc-options="-O0" -j4 # > /dev/null
-cabal test
-PATH=$oldpath
-
-# 7.6.3
-
-echo "Testing against GHC 7.6.3 ..."
-oldpath=$PATH
-PATH=/opt/ghc/7.6.3/bin:$PATH
-cabal clean > /dev/null
-echo "Cabal installing with -O0 ..."
-ghc --version
-# ghc-pkg unregister haddock || echo;
-# cabal install haddock==2.13.*
-ghc-pkg list haddock | grep haddock
+ghc-pkg list Cabal | grep Cabal
 cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
 cabal test
@@ -43,22 +28,41 @@ ghc --version
 # ghc-pkg unregister haddock || echo;
 # cabal install haddock==2.11.*
 ghc-pkg list haddock | grep haddock
+ghc-pkg list Cabal | grep Cabal
 cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
 cabal test
 PATH=$oldpath
 
-# 7.2.2
+# 7.6.3
 
-echo "Testing against GHC 7.2.2 ..."
+echo "Testing against GHC 7.6.3 ..."
 oldpath=$PATH
-PATH=/opt/ghc/7.2.2/bin:$PATH
+PATH=/opt/ghc/7.6.3/bin:$PATH
 cabal clean > /dev/null
 echo "Cabal installing with -O0 ..."
 ghc --version
 # ghc-pkg unregister haddock || echo;
-# cabal install haddock==2.9.*
+# cabal install haddock==2.13.*
 ghc-pkg list haddock | grep haddock
+ghc-pkg list Cabal | grep Cabal
+cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal build --ghc-options="-O0" -j4 # > /dev/null
+cabal test
+PATH=$oldpath
+
+# 7.8.2
+
+echo "Testing against GHC 7.8.2 ..."
+oldpath=$PATH
+PATH=/opt/ghc/7.8.2/bin:$PATH
+cabal clean > /dev/null
+echo "Cabal installing with -O0 ..."
+ghc --version
+# ghc-pkg unregister haddock || echo;
+# cabal install haddock==2.14.*
+ghc-pkg list haddock | grep haddock
+ghc-pkg list Cabal | grep Cabal
 cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
 cabal test

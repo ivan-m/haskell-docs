@@ -34,10 +34,17 @@ docs =
   do it "printDocumentation"
         (withInitializedPackages
            []
-           (void (printDocForIdentInModule
-                   Nothing
-                   (makeModuleName "System.IO")
-                   (Identifier "hSetBuffering"))))
+           (void (searchAndPrintDoc
+                    Nothing
+                    (Just (makeModuleName "System.IO"))
+                    (Identifier "hSetBuffering"))))
+     it "justIdentifier"
+        (withInitializedPackages
+           []
+           (void (searchAndPrintDoc
+                    Nothing
+                    Nothing
+                    (Identifier "hSetBuffering"))))
 
 -- | Test GHC types.
 types :: IO ()
@@ -45,9 +52,9 @@ types =
   do it "getType"
         (withInitializedPackages
            []
-           (do void (printDocForIdentInModule
+           (do void (searchAndPrintDoc
                       Nothing
-                      (makeModuleName "System.IO")
+                      (Just (makeModuleName "System.IO"))
                       (Identifier "hSetBuffering"))
                void (findIdentifier (makeModuleName "System.IO")
                                     (Identifier "hSetBuffering"))))

@@ -7,6 +7,7 @@ module Haskell.Docs.Formatting where
 import Haskell.Docs.Types
 import Haskell.Docs.Ghc
 
+import Control.Monad
 import Data.Char
 import Data.List
 import Documentation.Haddock
@@ -17,10 +18,19 @@ import Name
 -- * Formatting
 
 -- | Print an identifier' documentation.
-printIdentDoc :: IdentDoc -> Ghc ()
-printIdentDoc idoc =
+printIdentDoc :: Bool -- ^ Print package?
+              -> Bool -- ^ Print module?
+              -> IdentDoc
+              -> Ghc ()
+printIdentDoc printPkg printModule idoc =
   do d <- getSessionDynFlags
-     liftIO (putStrLn ("Package: " ++ showPackageName (identDocPackageName idoc)))
+     when printPkg
+          (liftIO (putStrLn ("Package: " ++ showPackageName (identDocPackageName idoc))))
+     when printModule
+          (maybe (return ())
+                 (\i -> liftIO (putStrLn ("Module: " ++
+                                          showppr d (moduleName (nameModule (getName i))))))
+                 (identDocIdent idoc))
      case identDocIdent idoc of
        Nothing -> return ()
        Just i -> liftIO (putStrLn (showppr d i ++ " :: " ++ showppr d (idType i)))

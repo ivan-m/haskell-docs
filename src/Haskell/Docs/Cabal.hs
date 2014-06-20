@@ -1,9 +1,11 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 
 -- | Cabal.
 
 module Haskell.Docs.Cabal where
 
+import Data.Function
 import Haskell.Docs.Ghc
 
 import Data.List
@@ -20,7 +22,7 @@ import PackageConfig
 
 -- * Cabal
 
--- | Get all installed packages.
+-- | Get all installed packages, filtering out the given package.
 getAllPackages :: IO [PackageConfig]
 getAllPackages =
   do config <- configureAllKnownPrograms
@@ -32,7 +34,15 @@ getAllPackages =
                 [GlobalPackageDB,UserPackageDB]
                 config
      return (map (imap convModule)
-                 (concat (allPackagesByName index)))
+                 (concat (packagesByName index)))
+
+-- | Version-portable version of allPackagesByName.
+packagesByName :: PackageIndex -> [[InstalledPackageInfo]]
+#if MIN_VERSION_Cabal(1,16,0)
+packagesByName = map snd . allPackagesByName
+#else
+packagesByName = allPackagesByName
+#endif
 
 -- * Internal modules
 

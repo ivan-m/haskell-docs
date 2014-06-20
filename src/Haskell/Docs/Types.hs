@@ -13,6 +13,7 @@ import Control.Exception (Exception)
 import Data.Typeable (Typeable)
 import Documentation.Haddock (Doc)
 import GHC (Id)
+import Module (ModuleName)
 import PackageConfig (PackageIdentifier)
 
 -- | An identifier.

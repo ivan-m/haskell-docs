@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections #-}
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
 
@@ -16,15 +17,21 @@ import GhcMonad (liftIO)
 import System.IO
 
 -- -- | Print the documentation of a name in the given module.
-printDocForIdentInModule
+searchAndPrintDoc
   :: Maybe PackageName -- ^ Package.
-  -> ModuleName        -- ^ Module name.
+  -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-printDocForIdentInModule pname mname name =
-  do result <- search Nothing pname mname name
+searchAndPrintDoc pname mname ident =
+  do (result,printPkg,printModule) <- search
      case result of
        Left err ->
          error (show err)
        Right docs ->
-         mapM_ printIdentDoc docs
+         mapM_ (printIdentDoc printPkg printModule)
+               docs
+  where search =
+          case (pname,mname) of
+            (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
+            (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
+            (Nothing,Nothing) -> fmap (,True,True) (searchIdent Nothing ident)
