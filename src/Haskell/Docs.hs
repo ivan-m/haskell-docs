@@ -5,7 +5,7 @@ module Haskell.Docs
   (printDocumentationInitialized
   ,withInitializedPackages
   ,printDocumentation
-  ,mkModuleName
+  ,makeModuleName
   ,findIdentifier)
   where
 
@@ -106,3 +106,7 @@ printWithInterface df printPackage package name mname interface = do
 descendSearch :: DynFlags -> String -> Name -> PackageConfig -> Ghc Bool
 descendSearch d name qname package = do
   printDocumentation d name (moduleName (nameModule qname)) Nothing (Just package)
+
+-- | Make a module name.
+makeModuleName :: String -> ModuleName
+makeModuleName = mkModuleName

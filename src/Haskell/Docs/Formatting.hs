@@ -57,6 +57,7 @@ doc (DocBold d) = "**" ++ doc d ++ "**"
 doc (DocHeader _) = ""
 #endif
 
+-- | Strip redundant whitespace.
 normalize :: [Char] -> [Char]
 normalize = go where
   go (' ':' ':cs) = go (' ':cs)

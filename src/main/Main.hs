@@ -13,7 +13,7 @@ main :: IO ()
 main = do
   (mname, name, pname, ghcopts) <- execParser opts
   withInitializedPackages ghcopts $ \d -> void $
-      printDocumentation d name (mkModuleName mname) pname Nothing
+      printDocumentation d name (makeModuleName mname) pname Nothing
  where
    opts = info (helper <*> p) fullDesc
    p = (\a b c d -> (a, b, c, d))

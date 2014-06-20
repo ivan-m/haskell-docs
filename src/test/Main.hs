@@ -25,7 +25,7 @@ spec =
 initialization :: IO ()
 initialization =
   do it "withInitializedPackages"
-        (withInitializedPackages [] (\dflags -> return ()))
+        (withInitializedPackages [] (const (return ())))
 
 -- | Test GHC docs.
 docs :: IO ()
@@ -37,7 +37,7 @@ docs =
               void (printDocumentation
                      d
                      "hSetBuffering"
-                     (mkModuleName "System.IO")
+                     (makeModuleName "System.IO")
                      Nothing
                      Nothing)))
 
@@ -51,10 +51,10 @@ types =
               do void (printDocumentation
                         d
                         "hSetBuffering"
-                        (mkModuleName "System.IO")
+                        (makeModuleName "System.IO")
                         Nothing
                         Nothing)
-                 void (findIdentifier (mkModuleName "System.IO")
+                 void (findIdentifier (makeModuleName "System.IO")
                                       "hSetBuffering")))
 
 -- | Describe a test spec.
