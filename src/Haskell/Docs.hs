@@ -1,4 +1,6 @@
+{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
+
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
 
@@ -8,30 +10,33 @@ module Haskell.Docs
   ,PackageName(..))
   where
 
-import Control.Monad
-import Data.List
 import Haskell.Docs.Formatting
 import Haskell.Docs.Haddock
 import Haskell.Docs.Types
 
+import Control.Monad
+import Data.List
+import Data.Ord
 import GHC hiding (verbosity)
 import GhcMonad (liftIO)
 
 -- -- | Print the documentation of a name in the given module.
 searchAndPrintDoc
-  :: Maybe PackageName -- ^ Package.
+  :: Bool              -- ^ Print modules only.
+  -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc pname mname ident =
+searchAndPrintDoc ms pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
          error (show err)
-       Right docs ->
-         mapM_ (\(i,doc') -> do when (i > 0)
-                                     (liftIO (putStrLn ""))
-                                printIdentDoc printPkg printModule doc')
+       Right (sortBy (comparing identDocPackageName) -> docs) ->
+         mapM_ (\(i,doc') ->
+                  do when (not ms && i > 0)
+                          (liftIO (putStrLn ""))
+                     printIdentDoc ms printPkg printModule doc')
                (zip [0::Int ..] (nub docs))
   where search =
           case (pname,mname) of

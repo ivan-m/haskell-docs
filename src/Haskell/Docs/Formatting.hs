@@ -18,11 +18,17 @@ import Name
 -- * Formatting
 
 -- | Print an identifier' documentation.
-printIdentDoc :: Bool -- ^ Print package?
+printIdentDoc :: Bool -- ^ Print modules only?
+              -> Bool -- ^ Print package?
               -> Bool -- ^ Print module?
               -> IdentDoc
               -> Ghc ()
-printIdentDoc printPkg printModule idoc =
+printIdentDoc True _ _ idoc =
+  do d <- getSessionDynFlags
+     maybe (return ())
+            (\i -> liftIO (putStrLn (showppr d (moduleName (nameModule (getName i))))))
+            (identDocIdent idoc)
+printIdentDoc _ printPkg printModule idoc =
   do d <- getSessionDynFlags
      when printPkg
           (liftIO (putStrLn ("Package: " ++ showPackageName (identDocPackageName idoc))))

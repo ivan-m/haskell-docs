@@ -1,3 +1,4 @@
+{-# LANGUAGE ViewPatterns #-}
 -- | Main command-line interface.
 
 module Main where
@@ -19,21 +20,34 @@ main =
 
 -- | Do the printing.
 app :: [String] -> IO ()
-app args =
+app (extract -> (gs,ms,as)) =
   withInitializedPackages
-    []
-    (case args of
+    gs
+    (case as of
        [name] ->
-         searchAndPrintDoc Nothing Nothing (Identifier name)
+         searchAndPrintDoc ms
+                           Nothing
+                           Nothing
+                           (Identifier name)
        [mname,name,pname] ->
-         searchAndPrintDoc (Just (PackageName pname))
+         searchAndPrintDoc ms
+                           (Just (PackageName pname))
                            (Just (makeModuleName mname))
                            (Identifier name)
        [mname,name] ->
-         searchAndPrintDoc Nothing
+         searchAndPrintDoc ms
+                           Nothing
                            (Just (makeModuleName mname))
                            (Identifier name)
        _ -> error "<module-name> <ident> [<package-name>] | <ident>")
+
+-- | Extract arguments.
+extract :: [String] -> ([String],Bool,[String])
+extract = go ([],False,[])
+  where go (gs,ms,as) ("-g":arg:ys)    = go (arg:gs,ms,as) ys
+        go (gs,ms,as) ("--modules":ys) = go (gs,True,as) ys
+        go (gs,ms,as) (y:ys)           = go (gs,ms,y:as) ys
+        go (gs,ms,as) []               = (gs,ms,as)
 
 -- | Print an exception for humans.
 printEx :: DocsException -> String
