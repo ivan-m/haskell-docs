@@ -8,6 +8,7 @@ description:         Given a module name and a name, it will find and display
                      /EXAMPLE USAGE/
                      .
                      > $ haskell-docs Data.List.Split split
+                     > split :: forall a. Splitter a -> [a] -> [[a]]
                      > Split a list according to the given splitting strategy. This is
                      >  how to "run" a Splitter that has been built using the other
                      >  combinators.
