@@ -36,6 +36,7 @@ docs =
            []
            (void (searchAndPrintDoc
                     False
+                    False
                     Nothing
                     (Just (makeModuleName "System.IO"))
                     (Identifier "hSetBuffering"))))
@@ -43,6 +44,7 @@ docs =
         (withInitializedPackages
            []
            (void (searchAndPrintDoc
+                    False
                     False
                     Nothing
                     Nothing
@@ -55,6 +57,7 @@ types =
         (withInitializedPackages
            []
            (do void (searchAndPrintDoc
+                      False
                       False
                       Nothing
                       (Just (makeModuleName "System.IO"))

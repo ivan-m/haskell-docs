@@ -25,23 +25,26 @@ main =
 
 -- | Do the printing.
 app :: [String] -> IO ()
-app (extract -> (gs,ms,as)) =
+app (extract -> (gs,ms,as,ss)) =
   withInitializedPackages
     gs
     (catchErrors
        (case as of
           [name] ->
             searchAndPrintDoc ms
+                              ss
                               Nothing
                               Nothing
                               (Identifier name)
           [mname,name,pname] ->
             searchAndPrintDoc ms
+                              ss
                               (Just (PackageName pname))
                               (Just (makeModuleName mname))
                               (Identifier name)
           [mname,name] ->
             searchAndPrintDoc ms
+                              ss
                               Nothing
                               (Just (makeModuleName mname))
                               (Identifier name)
@@ -52,14 +55,14 @@ app (extract -> (gs,ms,as)) =
                     \         --modules        Only output modules."))
 
 -- | Extract arguments.
-extract :: [String] -> ([String],Bool,[String])
-extract = go ([],False,[])
+extract :: [String] -> ([String],Bool,[String],Bool)
+extract = go ([],False,[],False)
   where
-    go (gs,ms,as) ("-g":arg:ys)    = go (arg:gs,ms,as) ys
-    go (gs,ms,as) ("--modules":ys) = go (gs,True,as) ys
-    go (gs,ms,as) ("--sexp":ys)    = go (gs,ms,as) ys
-    go (gs,ms,as) (y:ys)           = go (gs,ms,y:as) ys
-    go (gs,ms,as) []               = (gs,ms,as)
+    go (gs,ms,as,ss) ("-g":arg:ys)    = go (arg:gs,ms,as,ss) ys
+    go (gs,ms,as,ss) ("--modules":ys) = go (gs,True,as,ss) ys
+    go (gs,ms,as,ss) ("--sexp":ys)    = go (gs,ms,as,True) ys
+    go (gs,ms,as,ss) (y:ys)           = go (gs,ms,y:as,ss) ys
+    go (gs,ms,as,ss) []               = (gs,ms,as,ss)
 
 -- | Catch errors and print 'em out.
 catchErrors :: Ghc () -> Ghc ()
