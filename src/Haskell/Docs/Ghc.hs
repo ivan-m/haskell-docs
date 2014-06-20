@@ -5,6 +5,8 @@
 
 module Haskell.Docs.Ghc where
 
+import           Haskell.Docs.Types
+
 import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
 import           GhcMonad (liftIO)
@@ -20,15 +22,35 @@ import           DynFlags (defaultLogAction)
 import           DynFlags (defaultFlushOut, defaultFatalMessager)
 #endif
 
+-- * GHC actions
+
 -- | Run an action with an initialized GHC package set.
-withInitializedPackages :: [String] -> (DynFlags -> Ghc a) -> IO a
-withInitializedPackages ghcopts cont =
+withInitializedPackages :: [String] -> Ghc a -> IO a
+withInitializedPackages ghcopts m =
   run (do dflags <- getSessionDynFlags
           (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc ghcopts)
           _ <- setSessionDynFlags (dflags' { hscTarget = HscInterpreted
                                             , ghcLink = LinkInMemory })
-          (dflags'',_packageids) <- liftIO (initPackages dflags')
-          cont dflags'')
+          (_dflags'',_packageids) <- liftIO (initPackages dflags')
+          m)
+
+-- | Get the type of the given identifier from the given module.
+findIdentifier :: ModuleName -> Identifier -> Ghc (Maybe Id)
+findIdentifier mname name =
+  do _ <- depanal [] False
+     _ <- load LoadAllTargets
+     setImportContext mname
+     names <- getNamesInScope
+     mty <- lookupName (head (filter ((==unIdentifier name).getOccString) names))
+     case mty of
+       Just (AnId i) -> return (Just i)
+       _ -> return Nothing
+
+-- | Make a module name.
+makeModuleName :: String -> ModuleName
+makeModuleName = mkModuleName
+
+-- * Internal functions
 
 -- | Run the given GHC action.
 #if __GLASGOW_HASKELL__ < 706
@@ -63,18 +85,6 @@ setImportContext mname = setContext [] [simpleImportDecl mname]
 #else
 setImportContext mname = setContext [IIDecl (simpleImportDecl mname)]
 #endif
-
--- | Get the type of the given identifier from the given module.
-findIdentifier :: ModuleName -> String -> Ghc (Maybe Id)
-findIdentifier mname name =
-  do _ <- depanal [] False
-     _ <- load LoadAllTargets
-     setImportContext mname
-     names <- getNamesInScope
-     mty <- lookupName (head (filter ((==name).getOccString) names))
-     case mty of
-       Just (AnId i) -> return (Just i)
-       _ -> return Nothing
 
 -- | Show the package name e.g. base.
 showPackageName :: PackageIdentifier -> String

@@ -5,6 +5,7 @@ module Main where
 import qualified Control.Exception as E
 import           Control.Monad
 import           Haskell.Docs
+import           Haskell.Docs.Ghc
 import           System.Exit
 import           System.IO
 
@@ -25,7 +26,7 @@ spec =
 initialization :: IO ()
 initialization =
   do it "withInitializedPackages"
-        (withInitializedPackages [] (const (return ())))
+        (withInitializedPackages [] (return ()))
 
 -- | Test GHC docs.
 docs :: IO ()
@@ -33,13 +34,10 @@ docs =
   do it "printDocumentation"
         (withInitializedPackages
            []
-           (\d ->
-              void (printDocumentation
-                     d
-                     "hSetBuffering"
-                     (makeModuleName "System.IO")
-                     Nothing
-                     Nothing)))
+           (void (printDocForIdentInModule
+                   Nothing
+                   (makeModuleName "System.IO")
+                   (Identifier "hSetBuffering"))))
 
 -- | Test GHC types.
 types :: IO ()
@@ -47,15 +45,12 @@ types =
   do it "getType"
         (withInitializedPackages
            []
-           (\d ->
-              do void (printDocumentation
-                        d
-                        "hSetBuffering"
-                        (makeModuleName "System.IO")
-                        Nothing
-                        Nothing)
-                 void (findIdentifier (makeModuleName "System.IO")
-                                      "hSetBuffering")))
+           (do void (printDocForIdentInModule
+                      Nothing
+                      (makeModuleName "System.IO")
+                      (Identifier "hSetBuffering"))
+               void (findIdentifier (makeModuleName "System.IO")
+                                    (Identifier "hSetBuffering"))))
 
 -- | Describe a test spec.
 describe :: String -> IO () -> IO ()

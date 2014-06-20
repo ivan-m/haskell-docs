@@ -4,15 +4,36 @@
 
 module Haskell.Docs.Formatting where
 
+import Haskell.Docs.Types
+import Haskell.Docs.Ghc
+
 import Data.Char
 import Data.List
 import Documentation.Haddock
 import GHC hiding (verbosity)
+import GhcMonad (liftIO)
 import Name
+
+-- * Formatting
+
+-- | Print an identifier' documentation.
+printIdentDoc :: IdentDoc -> Ghc ()
+printIdentDoc idoc =
+  do d <- getSessionDynFlags
+     liftIO (putStrLn ("Package: " ++ showPackageName (identDocPackageName idoc)))
+     case identDocIdent idoc of
+       Nothing -> return ()
+       Just i -> liftIO (putStrLn (showppr d i ++ " :: " ++ showppr d (idType i)))
+     liftIO (putStrLn (formatDoc (identDocDocs idoc)))
+     case identDocArgDocs idoc of
+       Nothing -> return ()
+       Just args -> liftIO (putStr (unlines (map (\(i,x) -> formatArg i x) args)))
 
 -- | Format some documentation to plain text.
 formatDoc :: Doc String -> String
 formatDoc = trim . doc where
+
+-- * Internal functions
 
 -- | Render the doc.
 doc :: Doc String -> String

@@ -4,16 +4,20 @@
 
 module Main where
 
-import Control.Monad
 import Haskell.Docs
+import Haskell.Docs.Ghc
+
 import Options.Applicative
 
 -- | Main entry point.
 main :: IO ()
-main = do
-  (mname, name, pname, ghcopts) <- execParser opts
-  withInitializedPackages ghcopts $ \d -> void $
-      printDocumentation d name (makeModuleName mname) pname Nothing
+main =
+  do (mname, name, pname, ghcopts) <- execParser opts
+     withInitializedPackages
+       ghcopts
+       (printDocForIdentInModule (fmap PackageName pname)
+                                 (makeModuleName mname)
+                                 (Identifier name))
  where
    opts = info (helper <*> p) fullDesc
    p = (\a b c d -> (a, b, c, d))
