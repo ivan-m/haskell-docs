@@ -16,7 +16,6 @@ import Haskell.Docs.Types
 
 import GHC hiding (verbosity)
 import GhcMonad (liftIO)
-import System.IO
 
 -- -- | Print the documentation of a name in the given module.
 searchAndPrintDoc
@@ -30,13 +29,12 @@ searchAndPrintDoc pname mname ident =
        Left err ->
          error (show err)
        Right docs ->
-         mapM_ (\(i,doc) -> do when (i > 0)
-                                    (liftIO (putStrLn ""))
-                               printIdentDoc printPkg printModule doc)
-               (zip [0..] (nub docs))
+         mapM_ (\(i,doc') -> do when (i > 0)
+                                     (liftIO (putStrLn ""))
+                                printIdentDoc printPkg printModule doc')
+               (zip [0::Int ..] (nub docs))
   where search =
           case (pname,mname) of
             (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
-            (Nothing,Nothing) -> fmap (,True,True) (searchIdent Nothing ident)
-            _ -> error "arguments: <ident> | <module-name> <ident> [<package-name>]"
+            _ -> fmap (,True,True) (searchIdent Nothing ident)

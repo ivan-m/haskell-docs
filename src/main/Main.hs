@@ -41,7 +41,8 @@ printEx e =
   case e of
     NoFindModule -> "Couldn't find any packages with that module."
     NoModulePackageCombo -> "Couldn't match a module with that package."
-    NoInterfaceFiles -> "No interface files to search through! Maybe you need to generate documentation for the package?"
+    NoInterfaceFiles -> "No interface files to search through! \
+                        \Maybe you need to generate documentation for the package?"
     NoParseInterfaceFiles reasons -> "Couldn't parse interface files: " ++
                                      unlines (map printEx reasons)
     NoFindNameInExports -> "Couldn't find that name in an export list."
