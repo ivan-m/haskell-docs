@@ -1,17 +1,17 @@
 name:                haskell-docs
-version:             4.1.3
-synopsis:            A program to find and display the docs of a name from a
-                     given module.
-description:         Given a module name and a name, it will find and display
+version:             4.1.4
+synopsis:            A program to find and display the docs and type of a name
+description:         Given a module name and a name, or just a name, it will find and display
                      the documentation of that name.
                      .
                      /EXAMPLE USAGE/
                      .
-                     > $ haskell-docs Data.List.Split split
-                     > split :: forall a. Splitter a -> [a] -> [[a]]
-                     > Split a list according to the given splitting strategy. This is
-                     >  how to "run" a Splitter that has been built using the other
-                     >  combinators.
+                     > $ haskell-docs hSetBuffering
+                     > Package: base
+                     > Module: GHC.IO.Handle
+                     > hSetBuffering :: Handle -> BufferMode -> IO ()
+                     > Computation hSetBuffering `hdl mode` sets the mode of buffering for
+                     >  handle `hdl` on subsequent reads and writes.
                      .
                      /INSTALLATION/
                      .
@@ -30,7 +30,7 @@ description:         Given a module name and a name, it will find and display
                      /USING WITH GHCI/
                      .
                      > > :def doc \input -> return (":!haskell-docs " ++ input)
-                     > > :doc System.IO getContents base
+                     > > :doc getContents
                      > The getContents operation returns all user input as a single string,
                      >  which is read lazily as it is needed
                      >  (same as hGetContents stdin).
