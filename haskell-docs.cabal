@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             4.0.0
+version:             4.1.0
 synopsis:            A program to find and display the docs of a name from a
                      given module.
 description:         Given a module name and a name, it will find and display
@@ -53,6 +53,7 @@ Homepage:            http://github.com/chrisdone/haskell-docs
 Bug-Reports:         http://github.com/chrisdone/haskell-docs/issues
 
 library
+  ghc-options:         -O2 -Wall
   hs-source-dirs:      src
   exposed-modules:     Haskell.Docs,
                        Haskell.Docs.Ghc,

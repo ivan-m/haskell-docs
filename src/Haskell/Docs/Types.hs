@@ -32,6 +32,9 @@ data IdentDoc = IdentDoc
   , identDocArgDocs     :: !(Maybe [(Int, Doc String)])
   }
 
+instance Eq IdentDoc where
+  a == b = identDocIdent a == identDocIdent b
+
 -- | An exception when doing lookups.
 data DocsException
   = NoFindModule

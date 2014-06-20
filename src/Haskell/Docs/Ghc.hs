@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE CPP #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 
@@ -5,6 +6,7 @@
 
 module Haskell.Docs.Ghc where
 
+import           Control.Exception (SomeException)
 import           Haskell.Docs.Types
 
 import           GHC hiding (verbosity)
@@ -37,14 +39,15 @@ withInitializedPackages ghcopts m =
 -- | Get the type of the given identifier from the given module.
 findIdentifier :: ModuleName -> Identifier -> Ghc (Maybe Id)
 findIdentifier mname name =
-  do _ <- depanal [] False
-     _ <- load LoadAllTargets
-     setImportContext mname
-     names <- getNamesInScope
-     mty <- lookupName (head (filter ((==unIdentifier name).getOccString) names))
-     case mty of
-       Just (AnId i) -> return (Just i)
-       _ -> return Nothing
+  gcatch (do _ <- depanal [] False
+             _ <- load LoadAllTargets
+             setImportContext mname
+             names <- getNamesInScope
+             mty <- lookupName (head (filter ((==unIdentifier name).getOccString) names))
+             case mty of
+               Just (AnId i) -> return (Just i)
+               _ -> return Nothing)
+         (\(_ :: SomeException) -> return Nothing)
 
 -- | Make a module name.
 makeModuleName :: String -> ModuleName

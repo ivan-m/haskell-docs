@@ -8,6 +8,8 @@ module Haskell.Docs
   ,PackageName(..))
   where
 
+import Control.Monad
+import Data.List
 import Haskell.Docs.Formatting
 import Haskell.Docs.Haddock
 import Haskell.Docs.Types
@@ -28,10 +30,13 @@ searchAndPrintDoc pname mname ident =
        Left err ->
          error (show err)
        Right docs ->
-         mapM_ (printIdentDoc printPkg printModule)
-               docs
+         mapM_ (\(i,doc) -> do when (i > 0)
+                                    (liftIO (putStrLn ""))
+                               printIdentDoc printPkg printModule doc)
+               (zip [0..] (nub docs))
   where search =
           case (pname,mname) of
             (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
             (Nothing,Nothing) -> fmap (,True,True) (searchIdent Nothing ident)
+            _ -> error "arguments: <ident> | <module-name> <ident> [<package-name>]"
