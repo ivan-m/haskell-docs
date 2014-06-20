@@ -83,7 +83,7 @@ printWithInterface :: DynFlags -> Bool -> PackageConfig -> String -> ModuleName 
 printWithInterface df printPackage package name mname interface = do
   case find ((==name).getOccString) (instExports interface) of
     Nothing -> bail
-    Just qname ->
+    Just{} ->
       case M.lookup name docMap of
         Nothing -> do
           case lookup name (map (getOccString &&& id) (instExports interface)) of
@@ -94,7 +94,7 @@ printWithInterface df printPackage package name mname interface = do
         Just d ->
           do liftIO (when printPackage $
                        putStrLn $ "Package: " ++ showPackageName (sourcePackageId package))
-             printType df mname qname name
+             printType df mname name
              liftIO (putStrLn (formatDoc d))
              printArgs interface name
              return True
@@ -105,9 +105,10 @@ printWithInterface df printPackage package name mname interface = do
                              moduleNameString (moduleName (instMod interface)))
           return False
 
-printType d mname _qname name =
-  do _graph <- depanal [] False
-     _loaded <- load LoadAllTargets
+printType :: DynFlags -> ModuleName -> String -> Ghc ()
+printType d mname name =
+  do _ <- depanal [] False
+     _ <- load LoadAllTargets
 #if __GLASGOW_HASKELL__ == 702
 #else
      setContext [IIDecl (simpleImportDecl mname)]
