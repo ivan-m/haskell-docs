@@ -43,9 +43,9 @@ search mprevious mpname mname name = do
     Right packages  ->
       case mpname of
         Nothing -> do
-          fmap (Right . concat . rights)
-               (mapM (\package -> searchWithPackage package mname name)
-                     (filter (not . isPrevious) packages))
+          searchInPackages (filter (not . isPrevious) packages)
+                           mname
+                           name
         Just pname -> do
           case find ((== pname) . PackageName . showPackageName . sourcePackageId) packages of
             Nothing ->
@@ -54,6 +54,17 @@ search mprevious mpname mname name = do
               searchWithPackage package mname name
   where isPrevious m =
           Just (sourcePackageId m) == fmap sourcePackageId mprevious
+
+-- | Search for the identifier in a module in any of the given packages.
+searchInPackages
+  :: [PackageConfig]
+  -> ModuleName
+  -> Identifier
+  -> Ghc (Either a [IdentDoc])
+searchInPackages packages mname name =
+  fmap (Right . concat . rights)
+       (mapM (\package -> searchWithPackage package mname name)
+             packages)
 
 -- | Search for the given identifier in the given package.
 searchWithPackage
