@@ -1,12 +1,14 @@
 {-# OPTIONS -Wall #-}
 
+-- | Main command-line interface.
+
 module Main where
 
 import Control.Monad
-import Documentation.Haddock.Docs
-import GHC (mkModuleName)
+import Haskell.Docs
 import Options.Applicative
 
+-- | Main entry point.
 main :: IO ()
 main = do
   (mname, name, pname, ghcopts) <- execParser opts

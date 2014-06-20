@@ -4,7 +4,7 @@ module Main where
 
 import qualified Control.Exception as E
 import           Control.Monad
-import           Documentation.Haddock.Docs
+import           Haskell.Docs
 import           System.Exit
 import           System.IO
 
@@ -54,9 +54,8 @@ types =
                         (mkModuleName "System.IO")
                         Nothing
                         Nothing)
-                 void (getType d
-                               (mkModuleName "System.IO")
-                               "hSetBuffering")))
+                 void (findIdentifier (mkModuleName "System.IO")
+                                      "hSetBuffering")))
 
 -- | Describe a test spec.
 describe :: String -> IO () -> IO ()
