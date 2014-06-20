@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE CPP #-}
@@ -9,6 +10,7 @@
 module Documentation.Haddock.Docs where
 
 import           Control.Arrow
+import           Control.Exception
 import           Control.Monad
 import           Control.Monad.Loops
 import           Data.Char
@@ -16,6 +18,7 @@ import           Data.Either
 import           Data.List
 import           Data.Map (Map)
 import qualified Data.Map as M
+import           Data.Typeable
 import           Documentation.Haddock
 import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
@@ -32,6 +35,11 @@ import           DynFlags (defaultLogAction)
 #else
 import           DynFlags (defaultFlushOut, defaultFatalMessager)
 #endif
+
+data DocsException
+  = Couldn'tFindModule
+  deriving (Typeable,Show)
+instance Exception DocsException
 
 -- | Print documentation with an initialized package set.
 printDocumentationInitialized :: String -> ModuleName -> Maybe String -> [String] -> IO Bool
@@ -105,20 +113,40 @@ printWithInterface df printPackage package name mname interface = do
                              moduleNameString (moduleName (instMod interface)))
           return False
 
+-- | Print the type of the given identifier from the given module.
 printType :: DynFlags -> ModuleName -> String -> Ghc ()
 printType d mname name =
   do _ <- depanal [] False
      _ <- load LoadAllTargets
-#if __GLASGOW_HASKELL__ == 702
-#else
-     setContext [IIDecl (simpleImportDecl mname)]
-#endif
+     portableSetContext mname
      names <- getNamesInScope
      mty <- lookupName (head (filter ((==name).getOccString) names))
      case mty of
        Just (AnId i) -> liftIO (do putStr (showppr d i ++ " :: ")
                                    putStrLn (showppr d (idType i)))
        _ -> liftIO (putStrLn "Unable to find type for identifier.")
+
+
+-- | Get the type of the given identifier from the given module.
+getType :: DynFlags -> ModuleName -> String -> Ghc ()
+getType d mname name =
+  do _ <- depanal [] False
+     _ <- load LoadAllTargets
+     portableSetContext mname
+     names <- getNamesInScope
+     mty <- lookupName (head (filter ((==name).getOccString) names))
+     case mty of
+       Just (AnId i) -> liftIO (do putStr (showppr d i ++ " :: ")
+                                   putStrLn (showppr d (idType i)))
+       _ -> liftIO (putStrLn "Unable to find type for identifier.")
+
+-- | Set the import context.
+portableSetContext :: ModuleName -> Ghc ()
+#if __GLASGOW_HASKELL__ == 702
+portableSetContext mname = setContext [] [simpleImportDecl mname]
+#else
+portableSetContext mname = setContext [IIDecl (simpleImportDecl mname)]
+#endif
 
 -- | Print the documentation of the arguments.
 printArgs :: InstalledInterface -> String -> Ghc ()
