@@ -11,8 +11,9 @@ ghc --version
 # ghc-pkg unregister haddock || echo;
 # cabal install haddock==2.14.*
 ghc-pkg list haddock | grep haddock
-cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
+cabal test
 PATH=$oldpath
 
 # 7.6.3
@@ -26,8 +27,9 @@ ghc --version
 # ghc-pkg unregister haddock || echo;
 # cabal install haddock==2.13.*
 ghc-pkg list haddock | grep haddock
-cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
+cabal test
 PATH=$oldpath
 
 # 7.4.2
@@ -41,8 +43,9 @@ ghc --version
 # ghc-pkg unregister haddock || echo;
 # cabal install haddock==2.11.*
 ghc-pkg list haddock | grep haddock
-cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
+cabal test
 PATH=$oldpath
 
 # 7.2.2
@@ -56,6 +59,7 @@ ghc --version
 # ghc-pkg unregister haddock || echo;
 # cabal install haddock==2.9.*
 ghc-pkg list haddock | grep haddock
-cabal install --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
+cabal install --enable-tests --dependencies-only --ghc-options="-O0" -j4 # > /dev/null
 cabal build --ghc-options="-O0" -j4 # > /dev/null
+cabal test
 PATH=$oldpath

@@ -7,7 +7,12 @@
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
 
-module Documentation.Haddock.Docs where
+module Documentation.Haddock.Docs
+  (withInitializedPackages
+  ,printDocumentation
+  ,mkModuleName
+  ,getType)
+  where
 
 import           Control.Arrow
 import           Control.Exception
@@ -128,7 +133,7 @@ printType d mname name =
 
 
 -- | Get the type of the given identifier from the given module.
-getType :: DynFlags -> ModuleName -> String -> Ghc ()
+getType :: DynFlags -> ModuleName -> String -> Ghc String
 getType d mname name =
   do _ <- depanal [] False
      _ <- load LoadAllTargets
@@ -136,9 +141,8 @@ getType d mname name =
      names <- getNamesInScope
      mty <- lookupName (head (filter ((==name).getOccString) names))
      case mty of
-       Just (AnId i) -> liftIO (do putStr (showppr d i ++ " :: ")
-                                   putStrLn (showppr d (idType i)))
-       _ -> liftIO (putStrLn "Unable to find type for identifier.")
+       Just (AnId i) -> return (showppr d (idType i))
+       _ -> error "Unable to find type for identifier."
 
 -- | Set the import context.
 portableSetContext :: ModuleName -> Ghc ()
