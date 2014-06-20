@@ -17,7 +17,8 @@ You should ensure that you have
 
     documentation: True
 
-in your .cabal/config so that the necessary .haddock files are generated.
+in your `.cabal/config` so that the necessary .haddock files are
+generated.
 
 Haddock is very sensitive to the GHC version. This program tries not
 to be. If you cannot install this package due to a version problem,
