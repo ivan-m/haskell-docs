@@ -27,11 +27,12 @@ import           Packages
 -- * Searching for ident docs
 
 -- | Search a name in the given module.
-search :: Maybe PackageConfig
-       -> Maybe PackageName
-       -> ModuleName
-       -> Identifier
-       -> Ghc (Either DocsException [IdentDoc])
+search
+  :: Maybe PackageConfig
+  -> Maybe PackageName
+  -> ModuleName
+  -> Identifier
+  -> Ghc (Either DocsException [IdentDoc])
 search mprevious mpname mname name = do
   result <- getPackagesByModule mname
   case result of
