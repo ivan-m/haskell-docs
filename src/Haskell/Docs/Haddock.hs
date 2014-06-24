@@ -142,6 +142,8 @@ searchWithInterface package name interface =
              return
                (Right
                   [IdentDoc (sourcePackageId package)
+                            name
+                            (moduleName (instMod interface))
                             d
                             mi
                             margs])

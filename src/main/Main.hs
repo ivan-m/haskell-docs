@@ -26,7 +26,7 @@ main =
 
 -- | Do the printing.
 app :: [String] -> IO ()
-app (extract -> (gs,ms,as,ss)) =
+app (extract -> x@(gs,ms,as,ss)) =
   withInitializedPackages
     gs
     (catchErrors
@@ -63,7 +63,7 @@ extract = go ([],False,[],False)
     go (gs,ms,as,ss) ("--modules":ys) = go (gs,True,as,ss) ys
     go (gs,ms,as,ss) ("--sexp":ys)    = go (gs,ms,as,True) ys
     go (gs,ms,as,ss) (y:ys)           = go (gs,ms,y:as,ss) ys
-    go (gs,ms,as,ss) []               = (gs,ms,as,ss)
+    go (gs,ms,as,ss) []               = (gs,ms,reverse as,ss)
 
 -- | Catch errors and print 'em out.
 catchErrors :: Ghc () -> Ghc ()

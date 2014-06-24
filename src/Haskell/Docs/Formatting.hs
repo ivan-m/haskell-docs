@@ -29,20 +29,20 @@ printIdentDoc :: Bool -- ^ Print modules only?
               -> Ghc ()
 printIdentDoc True _ _ idoc =
   do d <- getSessionDynFlags
-     maybe (return ())
-            (\i -> liftIO (putStrLn (showppr d (moduleName (nameModule (getName i))))))
-            (identDocIdent idoc)
+     maybe (liftIO (putStrLn (showppr d (identDocModuleName idoc))))
+           (\i -> liftIO (putStrLn (showppr d (moduleName (nameModule (getName i))))))
+           (identDocIdent idoc)
 printIdentDoc _ printPkg printModule idoc =
   do d <- getSessionDynFlags
      when printPkg
           (liftIO (putStrLn ("Package: " ++ showPackageName (identDocPackageName idoc))))
      when printModule
-          (maybe (return ())
+          (maybe (liftIO (putStrLn ("Module: " ++ showppr d (identDocModuleName idoc))))
                  (\i -> liftIO (putStrLn ("Module: " ++
                                           showppr d (moduleName (nameModule (getName i))))))
                  (identDocIdent idoc))
      case identDocIdent idoc of
-       Nothing -> return ()
+       Nothing -> liftIO (putStrLn (unIdentifier (identDocIdentifier idoc)))
        Just i -> liftIO (putStrLn (showppr d i ++ " :: " ++ showppr d (idType i)))
      liftIO (putStrLn (formatDoc (identDocDocs idoc)))
      case identDocArgDocs idoc of

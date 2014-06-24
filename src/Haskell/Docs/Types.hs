@@ -27,6 +27,8 @@ newtype PackageName = PackageName String
 -- | Identier documentation along with argument docs and identifiers.
 data IdentDoc = IdentDoc
   { identDocPackageName :: !PackageIdentifier
+  , identDocIdentifier  :: !Identifier
+  , identDocModuleName  :: !ModuleName
   , identDocDocs        :: !(Doc String)
   , identDocIdent       :: !(Maybe Id)
   , identDocArgDocs     :: !(Maybe [(Int, Doc String)])
