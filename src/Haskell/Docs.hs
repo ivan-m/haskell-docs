@@ -14,6 +14,7 @@ import Haskell.Docs.Formatting
 import Haskell.Docs.Haddock
 import Haskell.Docs.Types
 
+import Control.Exception
 import Control.Monad
 import Data.List
 import Data.Ord
@@ -32,7 +33,7 @@ searchAndPrintDoc ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
-         error (show err)
+         throw err
        Right (sortBy (comparing identDocPackageName) -> docs) ->
           if ss
              then printSexp (nub docs)

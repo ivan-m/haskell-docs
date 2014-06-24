@@ -11,6 +11,7 @@ import           Haskell.Docs.Types
 import           Control.Exception
 import           Control.Exception (IOException)
 import qualified Control.Exception as E
+import           Data.Typeable
 import           GHC
 import           GhcMonad
 import           System.Environment
@@ -67,12 +68,15 @@ extract = go ([],False,[],False)
 -- | Catch errors and print 'em out.
 catchErrors :: Ghc () -> Ghc ()
 catchErrors m =
-  gcatch (gcatch m
-                 (\x ->
-                    do bail (printEx x)
-                       liftIO exitFailure))
-         (\(e::SomeException) ->
-            bail (show e))
+  gcatch
+    m
+    (\(SomeException e) ->
+       case cast e of
+         Just ex ->
+           do bail (printEx ex)
+              liftIO exitFailure
+         Nothing ->
+           bail ("Exception: " ++ show e ++ " :: " ++ show (typeOf e) ++ ""))
 
 -- | Print an error and bail out.
 bail :: String -> Ghc ()
