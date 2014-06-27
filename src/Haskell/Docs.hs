@@ -7,26 +7,25 @@
 module Haskell.Docs
   (module Haskell.Docs
   ,Identifier(..)
-  ,PackageName(..))
+  ,PackageName(..)
+  ,searchAndPrintModules
+  ,searchAndPrintDoc)
   where
 
 import           Haskell.Docs.Formatting
 import           Haskell.Docs.Haddock
-import           Haskell.Docs.Ghc
 import           Haskell.Docs.Index
 import           Haskell.Docs.Types
 
-import           Control.Arrow
 import           Control.Exception
 import           Control.Monad
 import qualified Data.HashMap.Strict as M
 import           Data.List
 import           Data.Ord
-import qualified Data.Text.IO as T
 import           Data.Text (pack,unpack)
+import qualified Data.Text.IO as T
 import           GHC hiding (verbosity)
-import           GhcMonad (liftIO)
-import           Module
+import           MonadUtils
 import           Packages
 
 -- -- | Print the documentation of a name in the given module.
@@ -75,3 +74,13 @@ searchAndPrintDoc packagemap ms ss pname mname ident =
             then forM_ (concat (map snd (M.toList packages)))
                        (\modu -> liftIO (T.putStrLn modu))
             else searchAndPrintDoc' packagemap ms ss pname mname ident
+
+searchAndPrintModules :: MonadIO m => Identifier -> m ()
+searchAndPrintModules ident =
+  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
+     case result of
+       Nothing ->
+         throw NoFindModule
+       Just packages ->
+         forM_ (nub (concat (map snd (M.toList packages))))
+               (\modu -> liftIO (T.putStrLn modu))

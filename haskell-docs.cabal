@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             4.1.5
+version:             4.2.1
 synopsis:            A program to find and display the docs and type of a name
 description:         Given a module name and a name, or just a name, it will find and display
                      the documentation of that name.
