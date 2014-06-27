@@ -7,11 +7,9 @@ module Haskell.Docs.Cabal where
 
 import Haskell.Docs.Ghc
 
--- import Data.Function
 import Data.List
 import Distribution.InstalledPackageInfo
 import Distribution.ModuleName
-import Distribution.Package
 import Distribution.Simple.Compiler
 import Distribution.Simple.GHC
 import Distribution.Simple.PackageIndex

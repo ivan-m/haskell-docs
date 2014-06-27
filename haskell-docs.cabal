@@ -60,14 +60,20 @@ library
                        Haskell.Docs.Cabal,
                        Haskell.Docs.Formatting,
                        Haskell.Docs.Haddock,
-                       Haskell.Docs.Types
+                       Haskell.Docs.Types,
+                       Haskell.Docs.Index
   build-depends:       base > 4 && < 5,
                        ghc >= 7.2 && < 7.9,
                        Cabal,
                        ghc-paths,
                        containers,
                        monad-loops,
-                       aeson
+                       aeson,
+                       filepath,
+                       directory,
+                       text,
+                       unordered-containers,
+                       bytestring
   if impl(ghc==7.8.*)
     build-depends: haddock==2.14.*
   if impl(ghc==7.6.*)
