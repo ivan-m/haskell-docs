@@ -100,7 +100,7 @@ searchWithPackage
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
 searchWithPackage package mname name =
-  do interfaceFiles <- getHaddockInterfacesByPackage package
+  do interfaceFiles <- liftIO (getHaddockInterfacesByPackage package)
      case (lefts interfaceFiles,rights interfaceFiles) of
        ([],[])        ->
          return (Left NoInterfaceFiles)
@@ -194,9 +194,8 @@ getPackagesByModule m =
                     (lookupModuleWithSuggestions df m))
 
 -- | Get the Haddock interfaces of the given package.
-getHaddockInterfacesByPackage :: PackageConfig -> Ghc [Either DocsException InterfaceFile]
+getHaddockInterfacesByPackage :: PackageConfig -> IO [Either DocsException InterfaceFile]
 getHaddockInterfacesByPackage =
-  liftIO .
   mapM (fmap (either (Left . NoReadInterfaceFile) Right) . safelyReadFile freshNameCache) .
   haddockInterfaces
   where safelyReadFile cache p =

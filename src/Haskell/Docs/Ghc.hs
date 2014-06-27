@@ -6,17 +6,17 @@
 
 module Haskell.Docs.Ghc where
 
-import           Control.Exception (SomeException)
 import           Haskell.Docs.Types
 
+import           Control.Exception (SomeException)
 import           GHC hiding (verbosity)
 import           GHC.Paths (libdir)
 import           GhcMonad (liftIO)
+import           Module
+import           Name
 import           Outputable
 import           Packages
 import qualified SrcLoc
-import           Name
-import           Module
 
 #if __GLASGOW_HASKELL__ < 706
 import           DynFlags (defaultLogAction)
@@ -32,7 +32,7 @@ withInitializedPackages ghcopts m =
   run (do dflags <- getSessionDynFlags
           (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc ghcopts)
           _ <- setSessionDynFlags (dflags' { hscTarget = HscInterpreted
-                                            , ghcLink = LinkInMemory })
+                                           , ghcLink = LinkInMemory })
           (_dflags'',_packageids) <- liftIO (initPackages dflags')
           m)
 

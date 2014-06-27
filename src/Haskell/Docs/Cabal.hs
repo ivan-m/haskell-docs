@@ -5,9 +5,9 @@
 
 module Haskell.Docs.Cabal where
 
-import Data.Function
 import Haskell.Docs.Ghc
 
+-- import Data.Function
 import Data.List
 import Distribution.InstalledPackageInfo
 import Distribution.ModuleName
