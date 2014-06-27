@@ -7,7 +7,7 @@
 
 module Haskell.Docs.Index where
 
-import           Control.Exception
+import           Control.Exception as E
 import           Control.Monad
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as S
@@ -66,6 +66,7 @@ generateIndex =
                                (pack pkg <> ":" <> pack modu) m)
                M.empty
                flatfile)
+  where (<>) = mappend
 
 -- | Generate a flat file of all package, module, name combinations.
 generateFlatFile :: IO [(String, String, String)]
@@ -96,10 +97,11 @@ saveIndex i =
      forM_ (M.toList i)
            (\(ident,modules) -> T.hPutStrLn h (ident <> " " <> modules))
      hClose h
+  where (<>) = mappend
 
 -- | Filename to read/write index to.
 indexFilename :: FilePath
-indexFilename = "haskell-docs.index"
+indexFilename = "haskell-docs-indents.index"
 
 -- * Internally looking up inside indexes
 
@@ -110,14 +112,14 @@ lookupInIndex
 lookupInIndex (T.encodeUtf8 -> ident) =
   do d <- getTemporaryDirectory
      h <- openFile (d </> indexFilename) ReadMode
-     catch
-       (fix (\loop ->
-               do line <- S.hGetLine h
-                  if S.takeWhile (/= space) line == ident
-                     then do hClose h
-                             return (Just (extractModules (S.drop 1 (S.dropWhile (/= space) line))))
-                     else loop))
-       (\(_ :: IOException) -> return Nothing)
+     E.catch
+         (fix (\loop ->
+                 do line <- S.hGetLine h
+                    if S.takeWhile (/= space) line == ident
+                       then do hClose h
+                               return (Just (extractModules (S.drop 1 (S.dropWhile (/= space) line))))
+                       else loop))
+         (\(_ :: IOException) -> return Nothing)
   where space = S.c2w ' '
 
 -- | Extract the \"package:Module package:Module\" string into a map from package to modules.

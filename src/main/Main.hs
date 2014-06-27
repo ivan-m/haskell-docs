@@ -29,31 +29,35 @@ app :: [String] -> IO ()
 app (extract -> x@(gs,ms,as,ss)) =
   withInitializedPackages
     gs
-    (catchErrors
-       (case as of
-          [name] ->
-            searchAndPrintDoc ms
-                              ss
-                              Nothing
-                              Nothing
-                              (Identifier name)
-          [mname,name,pname] ->
-            searchAndPrintDoc ms
-                              ss
-                              (Just (PackageName pname))
-                              (Just (makeModuleName mname))
-                              (Identifier name)
-          [mname,name] ->
-            searchAndPrintDoc ms
-                              ss
-                              Nothing
-                              (Just (makeModuleName mname))
-                              (Identifier name)
-          _ -> bail "<module-name> <ident> [<package-name>] | <ident>\n\
-                    \\n\
-                    \Options: --g <ghc option> Specify GHC options.\n\
-                    \         --sexp           Output s-expressions.\n\
-                    \         --modules        Only output modules."))
+    (\packages ->
+       catchErrors
+         (case as of
+            [name] ->
+              searchAndPrintDoc packages
+                                ms
+                                ss
+                                Nothing
+                                Nothing
+                                (Identifier name)
+            [mname,name,pname] ->
+              searchAndPrintDoc packages
+                                ms
+                                ss
+                                (Just (PackageName pname))
+                                (Just (makeModuleName mname))
+                                (Identifier name)
+            [mname,name] ->
+              searchAndPrintDoc packages
+                                ms
+                                ss
+                                Nothing
+                                (Just (makeModuleName mname))
+                                (Identifier name)
+            _ -> bail "<module-name> <ident> [<package-name>] | <ident>\n\
+                      \\n\
+                      \Options: --g <ghc option> Specify GHC options.\n\
+                      \         --sexp           Output s-expressions.\n\
+                      \         --modules        Only output modules."))
 
 -- | Extract arguments.
 extract :: [String] -> ([String],Bool,[String],Bool)

@@ -26,7 +26,7 @@ spec =
 initialization :: IO ()
 initialization =
   do it "withInitializedPackages"
-        (withInitializedPackages [] (return ()))
+        (withInitializedPackages [] (const (return ())))
 
 -- | Test GHC docs.
 docs :: IO ()
@@ -34,21 +34,25 @@ docs =
   do it "printDocumentation"
         (withInitializedPackages
            []
-           (void (searchAndPrintDoc
-                    False
-                    False
-                    Nothing
-                    (Just (makeModuleName "System.IO"))
-                    (Identifier "hSetBuffering"))))
+           (\pkgs ->
+              void (searchAndPrintDoc
+                      pkgs
+                      False
+                      False
+                      Nothing
+                      (Just (makeModuleName "System.IO"))
+                      (Identifier "hSetBuffering"))))
      it "justIdentifier"
         (withInitializedPackages
            []
-           (void (searchAndPrintDoc
-                    False
-                    False
-                    Nothing
-                    Nothing
-                    (Identifier "hSetBuffering"))))
+           (\pkgs ->
+              void (searchAndPrintDoc
+                      pkgs
+                      False
+                      False
+                      Nothing
+                      Nothing
+                      (Identifier "hSetBuffering"))))
 
 -- | Test GHC types.
 types :: IO ()
@@ -56,14 +60,16 @@ types =
   do it "getType"
         (withInitializedPackages
            []
-           (do void (searchAndPrintDoc
-                      False
-                      False
-                      Nothing
-                      (Just (makeModuleName "System.IO"))
-                      (Identifier "hSetBuffering"))
-               void (findIdentifier (makeModuleName "System.IO")
-                                    (Identifier "hSetBuffering"))))
+           (\pkgs ->
+              do void (searchAndPrintDoc
+                        pkgs
+                        False
+                        False
+                        Nothing
+                        (Just (makeModuleName "System.IO"))
+                        (Identifier "hSetBuffering"))
+                 void (findIdentifier (makeModuleName "System.IO")
+                                      (Identifier "hSetBuffering"))))
 
 -- | Describe a test spec.
 describe :: String -> IO () -> IO ()

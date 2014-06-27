@@ -10,26 +10,31 @@ module Haskell.Docs
   ,PackageName(..))
   where
 
-import Haskell.Docs.Formatting
-import Haskell.Docs.Haddock
-import Haskell.Docs.Types
+import           Haskell.Docs.Formatting
+import           Haskell.Docs.Haddock
+import           Haskell.Docs.Index
+import           Haskell.Docs.Types
 
-import Control.Exception
-import Control.Monad
-import Data.List
-import Data.Ord
-import GHC hiding (verbosity)
-import GhcMonad (liftIO)
+import           Control.Exception
+import           Control.Monad
+import qualified Data.HashMap.Strict as M
+import           Data.List
+import           Data.Ord
+import           Data.Text (pack)
+import           GHC hiding (verbosity)
+import           GhcMonad (liftIO)
+import           Packages
 
 -- -- | Print the documentation of a name in the given module.
 searchAndPrintDoc
-  :: Bool              -- ^ Print modules only.
+  :: PackageConfigMap  -- ^ Package map.
+  -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
   -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc ms ss pname mname ident =
+searchAndPrintDoc pkgs ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
@@ -47,3 +52,21 @@ searchAndPrintDoc ms ss pname mname ident =
             (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
             _ -> fmap (,True,True) (searchIdent Nothing ident)
+
+searchAndPrintDoc'
+  :: PackageConfigMap  -- ^ Package map.
+  -> Bool              -- ^ Print modules only.
+  -> Bool              -- ^ S-expression format.
+  -> Maybe PackageName -- ^ Package.
+  -> Maybe ModuleName  -- ^ Module name.
+  -> Identifier        -- ^ Identifier.
+  -> Ghc ()
+searchAndPrintDoc' packages ms ss pname mname ident =
+  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
+     case result of
+       Nothing ->
+         throw NoFindModule
+       Just packages ->
+         forM_ (M.toList packages)
+               (\(package,modules) -> do undefined
+                                         undefined)
