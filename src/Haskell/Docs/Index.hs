@@ -10,34 +10,25 @@
 import           Haskell.Docs.Cabal
 import           Haskell.Docs.Ghc
 import           Haskell.Docs.Haddock
-import           Haskell.Docs.Types
-
-import           Control.Arrow
 import           Control.Exception
-import           Control.Exception (try,IOException)
 import           Control.Monad
-import           Data.Aeson
-import qualified Data.ByteString.Char8 as L8
 import qualified Data.ByteString.Lazy as L
-import           Data.Char
 import           Data.Either
+import qualified Data.ByteString as S
+import qualified Data.ByteString.Internal as S
 import           Data.Function
-import qualified Data.HashMap.Lazy as LM
 import           Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import           Data.List
-import           Data.Map (Map)
 import           Data.Monoid
-import qualified Data.Serialize as Serial
-import           Data.Text (Text,pack,unpack)
+import           Data.Text (Text,pack)
 import qualified Data.Text.IO as T
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import           Documentation.Haddock
 import           GHC hiding (verbosity)
-import           GhcMonad (liftIO)
-import           GhcMonad (liftIO,Ghc)
 import           Name
 import           PackageConfig
-import           Packages
 import           System.Directory
 import           System.Environment
 import           System.FilePath
@@ -60,32 +51,21 @@ generateFlatFile =
                                         (sourcePackageId package,instMod iface,instExports iface)) .
                                  ifInstalledIfaces)
                                 (rights files)))))
-  where explode (pkg,mod,names) =
+  where explode (pkg,modu,names) =
           map (showPackageName pkg
-              ,moduleNameString (moduleName mod)
+              ,moduleNameString (moduleName modu)
               ,)
               (map getOccString names)
-
--- | Print the complete flat file.
-printFlatFile :: IO ()
-printFlatFile =
-  do i <- generateFlatFile
-     forM_ i
-           (\(pkg,mod,name) ->
-              putStrLn
-                (pkg ++ " " ++
-                 mod ++ " " ++
-                 name))
 
 -- | Generate an identifier index.
 generateIndex :: IO Index
 generateIndex =
   do flatfile <- generateFlatFile
      evaluate
-       (foldl' (\m (pkg,mod,name) ->
+       (foldl' (\m (pkg,modu,name) ->
                   M.insertWith (\x y -> x <> " " <> y)
                                (pack name)
-                               (pack pkg <> ":" <> pack mod) m)
+                               (pack pkg <> ":" <> pack modu) m)
                M.empty
                flatfile)
 
@@ -104,22 +84,23 @@ indexFilename = "haskell-docs.index"
 
 -- | Lookup an entry in the index by identifier.
 lookupInIndex
-  :: L8.ByteString -- ^ The UTF-8 encoded identifier.
-  -> IO (Maybe L8.ByteString)
-lookupInIndex ident =
+  :: Text -- ^ The UTF-8 encoded identifier.
+  -> IO (Maybe S.ByteString)
+lookupInIndex (T.encodeUtf8 -> ident) =
   do d <- getTemporaryDirectory
      h <- openFile (d </> indexFilename) ReadMode
      catch
        (fix (\loop ->
-               do line <- L8.hGetLine h
-                  if L8.takeWhile (/= ' ') line == ident
+               do line <- S.hGetLine h
+                  if S.takeWhile (/= space) line == ident
                      then do hClose h
-                             return (Just (L8.drop 1 (L8.dropWhile (/= ' ') line)))
+                             return (Just (S.drop 1 (S.dropWhile (/= space) line)))
                      else loop))
-       (\(e :: IOException) -> return Nothing)
+       (\(_ :: IOException) -> return Nothing)
+  where space = S.c2w ' '
 
 main :: IO ()
 main =
   do (arg:_) <- getArgs
-     result <- lookupInIndex (L8.pack arg)
+     result <- lookupInIndex (T.pack arg)
      print result
