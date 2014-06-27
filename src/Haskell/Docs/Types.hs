@@ -10,6 +10,7 @@ module Haskell.Docs.Types
   where
 
 import Control.Exception (Exception)
+import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Documentation.Haddock (Doc)
 import GHC (Id)
@@ -40,6 +41,7 @@ instance Eq IdentDoc where
 -- | An exception when doing lookups.
 data DocsException
   = NoFindModule
+  | PackageLookupFailed !Text
   | NoModulePackageCombo
   | NoInterfaceFiles
   | NoParseInterfaceFiles [DocsException]

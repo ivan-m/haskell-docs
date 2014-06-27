@@ -12,21 +12,25 @@ module Haskell.Docs
 
 import           Haskell.Docs.Formatting
 import           Haskell.Docs.Haddock
+import           Haskell.Docs.Ghc
 import           Haskell.Docs.Index
 import           Haskell.Docs.Types
 
+import           Control.Arrow
 import           Control.Exception
 import           Control.Monad
 import qualified Data.HashMap.Strict as M
 import           Data.List
 import           Data.Ord
-import           Data.Text (pack)
+import qualified Data.Text.IO as T
+import           Data.Text (pack,unpack)
 import           GHC hiding (verbosity)
 import           GhcMonad (liftIO)
+import           Module
 import           Packages
 
 -- -- | Print the documentation of a name in the given module.
-searchAndPrintDoc
+searchAndPrintDoc'
   :: PackageConfigMap  -- ^ Package map.
   -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
@@ -34,7 +38,7 @@ searchAndPrintDoc
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc pkgs ms ss pname mname ident =
+searchAndPrintDoc' pkgs ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
@@ -53,7 +57,7 @@ searchAndPrintDoc pkgs ms ss pname mname ident =
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
             _ -> fmap (,True,True) (searchIdent Nothing ident)
 
-searchAndPrintDoc'
+searchAndPrintDoc
   :: PackageConfigMap  -- ^ Package map.
   -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
@@ -61,12 +65,13 @@ searchAndPrintDoc'
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc' packages ms ss pname mname ident =
+searchAndPrintDoc packagemap ms ss pname mname ident =
   do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
      case result of
        Nothing ->
          throw NoFindModule
        Just packages ->
-         forM_ (M.toList packages)
-               (\(package,modules) -> do undefined
-                                         undefined)
+         if ms
+            then forM_ (concat (map snd (M.toList packages)))
+                       (\modu -> liftIO (T.putStrLn modu))
+            else searchAndPrintDoc' packagemap ms ss pname mname ident

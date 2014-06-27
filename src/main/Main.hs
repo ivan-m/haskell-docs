@@ -11,6 +11,8 @@ import           Haskell.Docs.Types
 import           Control.Exception
 import           Control.Exception (IOException)
 import qualified Control.Exception as E
+import           Data.Monoid
+import           Data.Text (unpack)
 import           Data.Typeable
 import           GHC
 import           GhcMonad
@@ -92,6 +94,7 @@ printEx :: DocsException -> String
 printEx e =
   case e of
     NoFindModule -> "Couldn't find any packages with that module."
+    PackageLookupFailed t -> "Couldn't lookup the right package: " <> unpack t
     NoModulePackageCombo -> "Couldn't match a module with that package."
     NoInterfaceFiles -> "No interface files to search through! \
                         \Maybe you need to generate documentation for the package?"
@@ -100,3 +103,4 @@ printEx e =
     NoFindNameInExports -> "Couldn't find that name in an export list."
     NoFindNameInInterface -> "Couldn't find name in interface."
     NoReadInterfaceFile _ -> "Couldn't read the interface file."
+  where (<>) = mappend
