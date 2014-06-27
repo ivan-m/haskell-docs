@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -11,13 +12,14 @@ import           Haskell.Docs.Ghc
 import           Haskell.Docs.Haddock
 import           Haskell.Docs.Types
 
-import qualified Data.Serialize as Serial
 import           Control.Arrow
 import           Control.Exception
 import           Control.Exception (try,IOException)
 import           Control.Monad
 import           Data.Aeson
+import qualified Data.ByteString.Char8 as L8
 import qualified Data.ByteString.Lazy as L
+import           Data.Char
 import           Data.Either
 import           Data.Function
 import qualified Data.HashMap.Lazy as LM
@@ -26,7 +28,9 @@ import qualified Data.HashMap.Strict as M
 import           Data.List
 import           Data.Map (Map)
 import           Data.Monoid
+import qualified Data.Serialize as Serial
 import           Data.Text (Text,pack,unpack)
+import qualified Data.Text.IO as T
 import           Documentation.Haddock
 import           GHC hiding (verbosity)
 import           GhcMonad (liftIO)
@@ -35,7 +39,9 @@ import           Name
 import           PackageConfig
 import           Packages
 import           System.Directory
+import           System.Environment
 import           System.FilePath
+import           System.IO
 
 -- | An identifier index.
 type Index = HashMap Text Text
@@ -77,48 +83,43 @@ generateIndex =
   do flatfile <- generateFlatFile
      evaluate
        (foldl' (\m (pkg,mod,name) ->
-                  M.insertWith (<>)
+                  M.insertWith (\x y -> x <> " " <> y)
                                (pack name)
-                               (pack pkg <> ":" <> pack mod <> ",") m)
+                               (pack pkg <> ":" <> pack mod) m)
                M.empty
                flatfile)
 
--- | Save the index to file.
 saveIndex :: Index -> IO ()
 saveIndex i =
   do d <- getTemporaryDirectory
-     L.writeFile (d </> indexFilename)
-                 (encode i)
-
--- | Read the index from file.
-readIndex :: IO (Maybe Index)
-readIndex =
-  do d <- getTemporaryDirectory
-     exists <- doesFileExist (d </> indexFilename)
-     if exists
-        then do bytes <- L.readFile (d </> indexFilename)
-                case decode bytes of
-                  Nothing -> return Nothing
-                  Just i -> return i
-        else return Nothing
-
--- | Try to read an existing index or generate a new one, save and
--- read from that.
-readOrGenerateIndex :: IO Index
-readOrGenerateIndex =
-  do existing <- readIndex
-     case existing of
-       Nothing ->
-         do new <- generateIndex
-            saveIndex new
-            return new
-       Just i -> return i
+     L.writeFile (d </> indexFilename) mempty
+     h <- openFile (d </> indexFilename) AppendMode
+     forM_ (M.toList i)
+           (\(ident,modules) -> T.hPutStrLn h (ident <> " " <> modules))
+     hClose h
 
 -- | Filename to read/write index to.
 indexFilename :: FilePath
-indexFilename = "haskell-docs-index.json"
+indexFilename = "haskell-docs.index"
+
+-- | Lookup an entry in the index by identifier.
+lookupInIndex
+  :: L8.ByteString -- ^ The UTF-8 encoded identifier.
+  -> IO (Maybe L8.ByteString)
+lookupInIndex ident =
+  do d <- getTemporaryDirectory
+     h <- openFile (d </> indexFilename) ReadMode
+     catch
+       (fix (\loop ->
+               do line <- L8.hGetLine h
+                  if L8.takeWhile (/= ' ') line == ident
+                     then do hClose h
+                             return (Just (L8.drop 1 (L8.dropWhile (/= ' ') line)))
+                     else loop))
+       (\(e :: IOException) -> return Nothing)
 
 main :: IO ()
 main =
-  do i <- readOrGenerateIndex
-     print (M.size i)
+  do (arg:_) <- getArgs
+     result <- lookupInIndex (L8.pack arg)
+     print result
