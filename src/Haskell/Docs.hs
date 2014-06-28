@@ -26,18 +26,16 @@ import           Data.Text (pack,unpack)
 import qualified Data.Text.IO as T
 import           GHC hiding (verbosity)
 import           MonadUtils
-import           Packages
 
 -- -- | Print the documentation of a name in the given module.
-searchAndPrintDoc'
-  :: PackageConfigMap  -- ^ Package map.
-  -> Bool              -- ^ Print modules only.
+searchAndPrintDoc
+  :: Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
   -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc' pkgs ms ss pname mname ident =
+searchAndPrintDoc ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
@@ -56,31 +54,13 @@ searchAndPrintDoc' pkgs ms ss pname mname ident =
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
             _ -> fmap (,True,True) (searchIdent Nothing ident)
 
-searchAndPrintDoc
-  :: PackageConfigMap  -- ^ Package map.
-  -> Bool              -- ^ Print modules only.
-  -> Bool              -- ^ S-expression format.
-  -> Maybe PackageName -- ^ Package.
-  -> Maybe ModuleName  -- ^ Module name.
-  -> Identifier        -- ^ Identifier.
-  -> Ghc ()
-searchAndPrintDoc packagemap ms ss pname mname ident =
-  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
-     case result of
-       Nothing ->
-         throw NoFindModule
-       Just packages ->
-         if ms
-            then forM_ (concat (map snd (M.toList packages)))
-                       (\modu -> liftIO (T.putStrLn modu))
-            else searchAndPrintDoc' packagemap ms ss pname mname ident
-
-searchAndPrintModules :: MonadIO m => Identifier -> m ()
-searchAndPrintModules ident =
-  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
+-- | Search only for identifiers and print out all modules associated.
+searchAndPrintModules :: [String] -> Identifier -> IO ()
+searchAndPrintModules flags ident =
+  do result <- lookupIdent flags (pack (unIdentifier ident))
      case result of
        Nothing ->
          throw NoFindModule
        Just packages ->
          forM_ (nub (concat (map snd (M.toList packages))))
-               (\modu -> liftIO (T.putStrLn modu))
+               T.putStrLn

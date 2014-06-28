@@ -27,14 +27,15 @@ import           DynFlags (defaultFlushOut, defaultFatalMessager)
 -- * GHC actions
 
 -- | Run an action with an initialized GHC package set.
-withInitializedPackages :: [String] -> (PackageConfigMap -> Ghc a) -> IO a
+withInitializedPackages :: [String] -> Ghc a -> IO a
 withInitializedPackages ghcopts m =
   run (do dflags <- getSessionDynFlags
           (dflags', _, _) <- parseDynamicFlags dflags (map SrcLoc.noLoc ghcopts)
           _ <- setSessionDynFlags (dflags' { hscTarget = HscInterpreted
                                            , ghcLink = LinkInMemory })
           (dflags'',_packageids) <- liftIO (initPackages dflags')
-          m (pkgIdMap (pkgState dflags'')))
+          _ <- setSessionDynFlags dflags''
+          m)
 
 -- | Get the type of the given identifier from the given module.
 findIdentifier :: ModuleName -> Identifier -> Ghc (Maybe Id)

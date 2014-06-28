@@ -7,6 +7,9 @@
 
 module Haskell.Docs.Index where
 
+import           Haskell.Docs.Ghc
+import           Haskell.Docs.Haddock
+
 import           Control.Exception as E
 import           Control.Monad
 import           Data.ByteString (ByteString)
@@ -27,9 +30,6 @@ import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
 import           Documentation.Haddock
 import           GHC hiding (verbosity)
-import           Haskell.Docs.Cabal
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Haddock
 import           Name
 import           PackageConfig
 import           Prelude
@@ -41,14 +41,15 @@ import           System.IO
 
 -- | Lookup an identifier. Automatically creates an index if none
 -- exists.
-lookupIdent :: Text
+lookupIdent :: [String]
+            -> Text
             -> IO (Maybe (HashMap Text [Text]))
-lookupIdent ident =
+lookupIdent flags ident =
   do d <- getTemporaryDirectory
      exists <- doesFileExist (d </> indexFilename)
      if exists
         then lookupInIndex ident
-        else do generateIndex >>= saveIndex
+        else do generateIndex flags >>= saveIndex
                 lookupInIndex ident
 
 -- * Internally generating indexes
@@ -57,9 +58,9 @@ lookupIdent ident =
 type Index = HashMap Text Text
 
 -- | Generate an identifier index.
-generateIndex :: IO Index
-generateIndex =
-  do flatfile <- generateFlatFile
+generateIndex :: [String] -> IO Index
+generateIndex flags =
+  do flatfile <- generateFlatFile flags
      evaluate
        (foldl' (\m (pkg,modu,name) ->
                   M.insertWith (\x y -> x <> " " <> y)
@@ -70,9 +71,13 @@ generateIndex =
   where (<>) = mappend
 
 -- | Generate a flat file of all package, module, name combinations.
-generateFlatFile :: IO [(String, String, String)]
-generateFlatFile =
-  do packages <- getAllPackages
+generateFlatFile :: [String] -> IO [(String, String, String)]
+generateFlatFile flags =
+  do packages <- withInitializedPackages
+                   flags
+                   (do flags <- getSessionDynFlags
+                       return (fromMaybe [] (pkgDatabase flags)))
+     {-packages <- getAllPackages-}
      fmap (concat . map explode . concat)
           (forM packages
                 (\package ->
