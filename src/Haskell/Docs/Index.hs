@@ -32,6 +32,7 @@ import           Haskell.Docs.Ghc
 import           Haskell.Docs.Haddock
 import           Name
 import           PackageConfig
+import           Prelude
 import           System.Directory
 import           System.FilePath
 import           System.IO
@@ -79,7 +80,9 @@ generateFlatFile =
                       return
                         (concat
                            (map (map (\iface ->
-                                        (sourcePackageId package,instMod iface,instExports iface)) .
+                                        (sourcePackageId package
+                                        ,instMod iface
+                                        ,instVisibleExports iface)) .
                                  ifInstalledIfaces)
                                 (rights files)))))
   where explode (pkg,modu,names) =
@@ -101,7 +104,7 @@ saveIndex i =
 
 -- | Filename to read/write index to.
 indexFilename :: FilePath
-indexFilename = "haskell-docs-indents.index"
+indexFilename = "haskell-docs-idents.index"
 
 -- * Internally looking up inside indexes
 
