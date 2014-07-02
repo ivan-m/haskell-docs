@@ -69,7 +69,7 @@ app (extract -> x@(gs,ms,as,ss)) =
 extract :: [String] -> ([String],Bool,[String],Bool)
 extract = go ([],False,[],False)
   where
-    go (gs,ms,as,ss) ("-g":arg:ys)    = go (arg:gs,ms,as,ss) ys
+    go (gs,ms,as,ss) ("--g":arg:ys)   = go (arg:gs,ms,as,ss) ys
     go (gs,ms,as,ss) ("--modules":ys) = go (gs,True,as,ss) ys
     go (gs,ms,as,ss) ("--sexp":ys)    = go (gs,ms,as,True) ys
     go (gs,ms,as,ss) (y:ys)           = go (gs,ms,y:as,ss) ys
