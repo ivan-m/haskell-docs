@@ -14,8 +14,10 @@ import qualified Control.Exception as E
 import           Data.Monoid
 import           Data.Text (unpack)
 import           Data.Typeable
+import           Exception
 import           GHC
 import           GhcMonad
+import           MonadUtils
 import           System.Environment
 import           System.Exit
 import           System.IO
@@ -30,10 +32,11 @@ main =
 app :: [String] -> IO ()
 app (extract -> x@(gs,ms,as,ss)) =
   do if ms
-        then case as of
-               [name]     -> searchAndPrintModules gs (Identifier name)
-               [_,name,_] -> searchAndPrintModules gs (Identifier name)
-               [_,name]   -> searchAndPrintModules gs (Identifier name)
+        then catchErrors
+               (case as of
+                  [name]     -> searchAndPrintModules gs (Identifier name)
+                  [_,name,_] -> searchAndPrintModules gs (Identifier name)
+                  [_,name]   -> searchAndPrintModules gs (Identifier name))
         else withInitializedPackages
                gs
                (catchErrors
@@ -73,7 +76,7 @@ extract = go ([],False,[],False)
     go (gs,ms,as,ss) []               = (gs,ms,reverse as,ss)
 
 -- | Catch errors and print 'em out.
-catchErrors :: Ghc () -> Ghc ()
+catchErrors :: (MonadIO m,ExceptionMonad m) => m () -> m ()
 catchErrors m =
   gcatch
     m
@@ -86,7 +89,7 @@ catchErrors m =
            bail ("Exception: " ++ show e ++ " :: " ++ show (typeOf e) ++ ""))
 
 -- | Print an error and bail out.
-bail :: String -> Ghc ()
+bail :: MonadIO m => String -> m ()
 bail e =
   liftIO (hPutStrLn stderr e)
 
