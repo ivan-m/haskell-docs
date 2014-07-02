@@ -61,7 +61,7 @@ app (extract -> x@(gs,ms,as,ss)) =
                                          (Identifier name)
                      _ -> bail "<module-name> <ident> [<package-name>] | <ident>\n\
                                \\n\
-                               \Options: --g <ghc option> Specify GHC options.\n\
+                               \Options: -g <ghc option>  Specify GHC options.\n\
                                \         --sexp           Output s-expressions.\n\
                                \         --modules        Only output modules." ))
 
