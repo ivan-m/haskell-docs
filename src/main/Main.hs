@@ -28,12 +28,12 @@ main =
 
 -- | Do the printing.
 app :: [String] -> IO ()
-app (extract -> x@(gs,ms,as,ss)) =
-  do if ms
+app (extract -> x@(gs,ms,as,ss)) = do
+    if ms
         then case as of
-               [name]     -> searchAndPrintModules (Identifier name)
-               [_,name,_] -> searchAndPrintModules (Identifier name)
-               [_,name]   -> searchAndPrintModules (Identifier name)
+               [name]     -> searchAndPrintModules gs (Identifier name)
+               [_,name,_] -> searchAndPrintModules gs (Identifier name)
+               [_,name]   -> searchAndPrintModules gs (Identifier name)
         else withInitializedPackages
                gs
                (\packages ->
@@ -41,6 +41,7 @@ app (extract -> x@(gs,ms,as,ss)) =
                     (case as of
                        [name] ->
                          searchAndPrintDoc packages
+                                           gs
                                            ms
                                            ss
                                            Nothing
@@ -48,6 +49,7 @@ app (extract -> x@(gs,ms,as,ss)) =
                                            (Identifier name)
                        [mname,name,pname] ->
                          searchAndPrintDoc packages
+                                           gs
                                            ms
                                            ss
                                            (Just (PackageName pname))
@@ -55,6 +57,7 @@ app (extract -> x@(gs,ms,as,ss)) =
                                            (Identifier name)
                        [mname,name] ->
                          searchAndPrintDoc packages
+                                           gs
                                            ms
                                            ss
                                            Nothing
@@ -70,7 +73,7 @@ app (extract -> x@(gs,ms,as,ss)) =
 extract :: [String] -> ([String],Bool,[String],Bool)
 extract = go ([],False,[],False)
   where
-    go (gs,ms,as,ss) ("-g":arg:ys)    = go (arg:gs,ms,as,ss) ys
+    go (gs,ms,as,ss) ("--g":arg:ys)   = go (arg:gs,ms,as,ss) ys
     go (gs,ms,as,ss) ("--modules":ys) = go (gs,True,as,ss) ys
     go (gs,ms,as,ss) ("--sexp":ys)    = go (gs,ms,as,True) ys
     go (gs,ms,as,ss) (y:ys)           = go (gs,ms,y:as,ss) ys

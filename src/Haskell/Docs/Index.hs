@@ -40,14 +40,15 @@ import           System.IO
 
 -- | Lookup an identifier. Automatically creates an index if none
 -- exists.
-lookupIdent :: Text
+lookupIdent :: [String]
+            -> Text
             -> IO (Maybe (HashMap Text [Text]))
-lookupIdent ident =
+lookupIdent gs ident =
   do d <- getTemporaryDirectory
      exists <- doesFileExist (d </> indexFilename)
      if exists
         then lookupInIndex ident
-        else do generateIndex >>= saveIndex
+        else do generateIndex gs >>= saveIndex
                 lookupInIndex ident
 
 -- * Internally generating indexes
@@ -56,9 +57,9 @@ lookupIdent ident =
 type Index = HashMap Text Text
 
 -- | Generate an identifier index.
-generateIndex :: IO Index
-generateIndex =
-  do flatfile <- generateFlatFile
+generateIndex :: [String] -> IO Index
+generateIndex gs =
+  do flatfile <- generateFlatFile gs
      evaluate
        (foldl' (\m (pkg,modu,name) ->
                   M.insertWith (\x y -> x <> " " <> y)
@@ -69,9 +70,9 @@ generateIndex =
   where (<>) = mappend
 
 -- | Generate a flat file of all package, module, name combinations.
-generateFlatFile :: IO [(String, String, String)]
-generateFlatFile =
-  do packages <- getAllPackages
+generateFlatFile :: [String] -> IO [(String, String, String)]
+generateFlatFile gs =
+  do packages <- getAllPackages gs
      fmap (concat . map explode . concat)
           (forM packages
                 (\package ->
@@ -94,6 +95,7 @@ saveIndex i =
   do d <- getTemporaryDirectory
      L.writeFile (d </> indexFilename) mempty
      h <- openFile (d </> indexFilename) AppendMode
+     hSetEncoding h utf8
      forM_ (M.toList i)
            (\(ident,modules) -> T.hPutStrLn h (ident <> " " <> modules))
      hClose h
@@ -112,6 +114,7 @@ lookupInIndex
 lookupInIndex (T.encodeUtf8 -> ident) =
   do d <- getTemporaryDirectory
      h <- openFile (d </> indexFilename) ReadMode
+     hSetEncoding h utf8
      E.catch
          (fix (\loop ->
                  do line <- S.hGetLine h

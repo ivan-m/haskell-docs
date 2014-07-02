@@ -32,11 +32,12 @@ import           Packages
 
 -- | Search a name in the given module.
 searchIdent
-  :: Maybe PackageConfig
+  :: [String]
+  -> Maybe PackageConfig
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
-searchIdent mprevious name =
-  do packages <- fmap (filterPrevious mprevious) (liftIO getAllPackages)
+searchIdent gs mprevious name =
+  do packages <- fmap (filterPrevious mprevious) (liftIO $ getAllPackages gs)
      searchInPackages packages
                       Nothing
                       name

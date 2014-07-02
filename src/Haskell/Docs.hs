@@ -31,13 +31,14 @@ import           Packages
 -- -- | Print the documentation of a name in the given module.
 searchAndPrintDoc'
   :: PackageConfigMap  -- ^ Package map.
+  -> [String]          -- ^ GHC options
   -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
   -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc' pkgs ms ss pname mname ident =
+searchAndPrintDoc' pkgs gs ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
@@ -54,18 +55,19 @@ searchAndPrintDoc' pkgs ms ss pname mname ident =
           case (pname,mname) of
             (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
-            _ -> fmap (,True,True) (searchIdent Nothing ident)
+            _ -> fmap (,True,True) (searchIdent gs Nothing ident)
 
 searchAndPrintDoc
   :: PackageConfigMap  -- ^ Package map.
+  -> [String]          -- ^ GHC options
   -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
   -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc packagemap ms ss pname mname ident =
-  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
+searchAndPrintDoc packagemap gs ms ss pname mname ident =
+  do result <- liftIO (lookupIdent gs (pack (unIdentifier ident)))
      case result of
        Nothing ->
          throw NoFindModule
@@ -73,11 +75,11 @@ searchAndPrintDoc packagemap ms ss pname mname ident =
          if ms
             then forM_ (concat (map snd (M.toList packages)))
                        (\modu -> liftIO (T.putStrLn modu))
-            else searchAndPrintDoc' packagemap ms ss pname mname ident
+            else searchAndPrintDoc' packagemap gs ms ss pname mname ident
 
-searchAndPrintModules :: MonadIO m => Identifier -> m ()
-searchAndPrintModules ident =
-  do result <- liftIO (lookupIdent (pack (unIdentifier ident)))
+searchAndPrintModules :: MonadIO m => [String] -> Identifier -> m ()
+searchAndPrintModules gs ident =
+  do result <- liftIO (lookupIdent gs (pack (unIdentifier ident)))
      case result of
        Nothing ->
          throw NoFindModule
