@@ -36,6 +36,7 @@ docs =
            []
            (\pkgs ->
               void (searchAndPrintDoc
+                      []
                       pkgs
                       False
                       False
@@ -47,6 +48,7 @@ docs =
            []
            (\pkgs ->
               void (searchAndPrintDoc
+                      []
                       pkgs
                       False
                       False
@@ -62,6 +64,7 @@ types =
            []
            (\pkgs ->
               do void (searchAndPrintDoc
+                        []
                         pkgs
                         False
                         False

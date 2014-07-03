@@ -42,19 +42,22 @@ app (extract -> x@(gs,ms,as,ss)) =
                (catchErrors
                   (case as of
                      [name] ->
-                       searchAndPrintDoc ms
+                       searchAndPrintDoc gs
+                                         ms
                                          ss
                                          Nothing
                                          Nothing
                                          (Identifier name)
                      [mname,name,pname] ->
-                       searchAndPrintDoc ms
+                       searchAndPrintDoc gs
+                                         ms
                                          ss
                                          (Just (PackageName pname))
                                          (Just (makeModuleName mname))
                                          (Identifier name)
                      [mname,name] ->
-                       searchAndPrintDoc ms
+                       searchAndPrintDoc gs
+                                         ms
                                          ss
                                          Nothing
                                          (Just (makeModuleName mname))

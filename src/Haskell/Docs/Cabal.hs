@@ -7,6 +7,7 @@ module Haskell.Docs.Cabal where
 
 import Haskell.Docs.Ghc
 
+import Data.Char (isSpace)
 import Data.List
 import Distribution.InstalledPackageInfo
 import Distribution.ModuleName
@@ -20,16 +21,22 @@ import PackageConfig
 
 -- * Cabal
 
+getGhcOpsPackageDB :: [String] -> [PackageDB]
+getGhcOpsPackageDB gs = map (SpecificPackageDB . trim) pkgDBOps
+    where
+        pkgDBOps = filter ("--package-db" `isPrefixOf`) gs
+        trim = (drop 1) . snd . (break isSpace)
+
 -- | Get all installed packages, filtering out the given package.
-getAllPackages :: IO [PackageConfig]
-getAllPackages =
+getAllPackages :: [String] -> IO [PackageConfig]
+getAllPackages gs =
   do config <- configureAllKnownPrograms
                  normal
                  (addKnownPrograms [ghcProgram,ghcPkgProgram]
                                    emptyProgramConfiguration)
      index <- getInstalledPackages
                 normal
-                [GlobalPackageDB,UserPackageDB]
+                (concat [[GlobalPackageDB,UserPackageDB],getGhcOpsPackageDB gs])
                 config
      return (map (imap convModule)
                  (concat (packagesByName index)))

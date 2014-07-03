@@ -29,13 +29,14 @@ import           MonadUtils
 
 -- -- | Print the documentation of a name in the given module.
 searchAndPrintDoc
-  :: Bool              -- ^ Print modules only.
+  :: [String]          -- ^ GHC Options
+  -> Bool              -- ^ Print modules only.
   -> Bool              -- ^ S-expression format.
   -> Maybe PackageName -- ^ Package.
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc ms ss pname mname ident =
+searchAndPrintDoc gs ms ss pname mname ident =
   do (result,printPkg,printModule) <- search
      case result of
        Left err ->
@@ -52,7 +53,7 @@ searchAndPrintDoc ms ss pname mname ident =
           case (pname,mname) of
             (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
             (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
-            _ -> fmap (,True,True) (searchIdent Nothing ident)
+            _ -> fmap (,True,True) (searchIdent gs Nothing ident)
 
 -- | Search only for identifiers and print out all modules associated.
 searchAndPrintModules :: [String] -> Identifier -> IO ()
