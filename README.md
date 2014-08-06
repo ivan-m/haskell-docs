@@ -1,3 +1,5 @@
+[![Hackage](https://img.shields.io/hackage/v/haskell-docs.svg?style=flat)](https://hackage.haskell.org/package/haskell-docs)
+
 Given a module name and a name, it will find and display the
 documentation of that name.
 
