@@ -9,13 +9,13 @@ import Haskell.Docs.Ghc
 
 import Data.Char (isSpace)
 import Data.List
+import Data.Maybe
 import Distribution.InstalledPackageInfo
 import Distribution.ModuleName
 import Distribution.Simple.Compiler
-import Distribution.Simple.GHC
 import Distribution.Simple.PackageIndex
-import Distribution.Simple.Program
-import Distribution.Verbosity
+import DynFlags
+import GHC
 import Module
 import PackageConfig
 
@@ -28,18 +28,20 @@ getGhcOpsPackageDB gs = map (SpecificPackageDB . trim) pkgDBOps
         trim = (drop 1) . snd . (break isSpace)
 
 -- | Get all installed packages, filtering out the given package.
-getAllPackages :: [String] -> IO [PackageConfig]
+getAllPackages :: [String] -> Ghc [PackageConfig.PackageConfig]
 getAllPackages gs =
-  do config <- configureAllKnownPrograms
-                 normal
-                 (addKnownPrograms [ghcProgram,ghcPkgProgram]
-                                   emptyProgramConfiguration)
-     index <- getInstalledPackages
-                normal
-                (concat [[GlobalPackageDB,UserPackageDB],getGhcOpsPackageDB gs])
-                config
-     return (map (imap convModule)
-                 (concat (packagesByName index)))
+  do flags <- getSessionDynFlags
+     return (fromMaybe [] (pkgDatabase flags))
+  -- do config <- configureAllKnownPrograms
+  --                normal
+  --                (addKnownPrograms [ghcProgram,ghcPkgProgram]
+  --                                  emptyProgramConfiguration)
+  --    index <- getInstalledPackages
+  --               normal
+  --               (concat [[GlobalPackageDB,UserPackageDB],getGhcOpsPackageDB gs])
+  --               config
+  --    return (map (imap convModule)
+  --                (concat (packagesByName index)))
 
 -- | Version-portable version of allPackagesByName.
 packagesByName :: PackageIndex -> [[InstalledPackageInfo]]

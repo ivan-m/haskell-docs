@@ -7,15 +7,16 @@
 module Haskell.Docs
   (module Haskell.Docs
   ,Identifier(..)
-  ,PackageName(..)
-  ,searchAndPrintModules
-  ,searchAndPrintDoc)
+  ,PackageName(..))
   where
 
+import           Haskell.Docs.Cabal
 import           Haskell.Docs.Formatting
+import           Haskell.Docs.Ghc
 import           Haskell.Docs.Haddock
 import           Haskell.Docs.Index
 import           Haskell.Docs.Types
+import           PackageConfig
 
 import           Control.Exception
 import           Control.Monad
@@ -23,6 +24,7 @@ import qualified Data.HashMap.Strict as M
 import           Data.List
 import           Data.Ord
 import           Data.Text (pack,unpack)
+import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import           GHC hiding (verbosity)
 import           MonadUtils
@@ -36,24 +38,36 @@ searchAndPrintDoc
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc gs ms ss pname mname ident =
-  do (result,printPkg,printModule) <- search
+searchAndPrintDoc flags ms ss pname mname ident =
+  do result <- liftIO (lookupIdent flags
+                                   (pack (unIdentifier ident)))
      case result of
-       Left err ->
-         throw err
-       Right (sortBy (comparing identDocPackageName) -> docs) ->
-          if ss
-             then printSexp (nub docs)
-             else mapM_ (\(i,doc') ->
-                           do when (not ms && i > 0)
-                                   (liftIO (putStrLn ""))
-                              printIdentDoc ms printPkg printModule doc')
-                        (zip [0::Int ..] (nub docs))
-  where search =
-          case (pname,mname) of
-            (Just p,Just m) -> fmap (,False,False) (searchPackageModuleIdent Nothing p m ident)
-            (Nothing,Just m) -> fmap (,True,False) (searchModuleIdent Nothing m ident)
-            _ -> fmap (,True,True) (searchIdent gs Nothing ident)
+       Nothing -> throw NoFindModule
+       Just pkgModuleMap ->
+         do pkgs <- getAllPackages flags
+            docs <- fmap concat
+                         (forM (M.toList pkgModuleMap)
+                               (searchResult pkgs))
+            if ss
+               then printSexp docs
+               else mapM_ (\(i,doc') ->
+                             printIdentDoc False True True doc')
+                          (zip [0 :: Int ..]
+                               (nub docs))
+  where searchResult pkgs (pkgName,modName) =
+          case find (matchingPkg pkgName) pkgs of
+            Nothing -> return []
+            Just pkg -> searchPkg pkg modName
+          where matchingPkg pkgName = (== pkgName) . T.pack . showPackageName .
+                                      sourcePackageId
+        searchPkg pkg modName =
+          do result <- searchWithPackage
+                         pkg
+                         (Just (head (fmap (makeModuleName . T.unpack) modName)))
+                         ident
+             case result of
+               Left err -> throw err
+               Right (sortBy (comparing identDocPackageName) -> docs) -> return docs
 
 -- | Search only for identifiers and print out all modules associated.
 searchAndPrintModules :: [String] -> Identifier -> IO ()

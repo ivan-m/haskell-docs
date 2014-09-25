@@ -37,7 +37,7 @@ searchIdent
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
 searchIdent gs mprevious name =
-  do packages <- fmap (filterPrevious mprevious) (liftIO $ getAllPackages gs)
+  do packages <- fmap (filterPrevious mprevious) (getAllPackages gs)
      searchInPackages packages
                       Nothing
                       name
