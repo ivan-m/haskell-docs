@@ -46,6 +46,7 @@ lookupIdent :: [String]
             -> IO (Maybe (HashMap Text [Text]))
 lookupIdent flags ident =
   do d <- getTemporaryDirectory
+
      exists <- doesFileExist (d </> indexFilename)
      if exists
         then lookupInIndex ident
@@ -77,7 +78,6 @@ generateFlatFile flags =
                    flags
                    (do flags <- getSessionDynFlags
                        return (fromMaybe [] (pkgDatabase flags)))
-     {-packages <- getAllPackages-}
      fmap (concat . map explode . concat)
           (forM packages
                 (\package ->
