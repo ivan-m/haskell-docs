@@ -62,19 +62,22 @@ library
                        Haskell.Docs.Haddock,
                        Haskell.Docs.Types,
                        Haskell.Docs.Index
-  build-depends:       text,
-                       base > 4 && < 5,
-                       ghc >= 7.2 && < 7.9,
-                       Cabal,
-                       ghc-paths,
-                       containers,
-                       monad-loops,
-                       aeson,
-                       filepath,
-                       directory,
-                       text,
-                       unordered-containers,
-                       bytestring
+  build-depends:       Cabal
+                     , aeson
+                     , base > 4 && < 5
+                     , base16-bytestring
+                     , bytestring
+                     , containers
+                     , cryptohash
+                     , directory
+                     , filepath
+                     , ghc >= 7.2 && < 7.9
+                     , ghc-paths
+                     , monad-loops
+                     , process
+                     , text
+                     , text
+                     , unordered-containers
   if impl(ghc==7.8.*)
     build-depends: haddock==2.14.*
   if impl(ghc==7.6.*)

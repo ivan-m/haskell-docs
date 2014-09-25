@@ -12,8 +12,11 @@ import           Haskell.Docs.Haddock
 
 import           Control.Exception as E
 import           Control.Monad
+import qualified Crypto.Hash.SHA1 as SHA1
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString as S
+import qualified Data.ByteString.Base16 as B16
+import qualified Data.ByteString.Char8 as S8
 import qualified Data.ByteString.Internal as S
 import qualified Data.ByteString.Lazy as L
 import           Data.Char
@@ -34,8 +37,10 @@ import           Name
 import           PackageConfig
 import           Prelude
 import           System.Directory
+import           System.Environment
 import           System.FilePath
 import           System.IO
+import           System.Process
 
 -- * Looking up identifiers
 
@@ -46,8 +51,8 @@ lookupIdent :: [String]
             -> IO (Maybe (HashMap Text [Text]))
 lookupIdent flags ident =
   do d <- getTemporaryDirectory
-
-     exists <- doesFileExist (d </> indexFilename)
+     fp <- getIndexFilename
+     exists <- doesFileExist (d </> fp)
      if exists
         then lookupInIndex ident
         else do generateIndex flags >>= saveIndex
@@ -100,6 +105,7 @@ generateFlatFile flags =
 saveIndex :: Index -> IO ()
 saveIndex i =
   do d <- getTemporaryDirectory
+     indexFilename <- getIndexFilename
      L.writeFile (d </> indexFilename) mempty
      h <- openFile (d </> indexFilename) AppendMode
      forM_ (M.toList i)
@@ -108,8 +114,10 @@ saveIndex i =
   where (<>) = mappend
 
 -- | Filename to read/write index to.
-indexFilename :: FilePath
-indexFilename = "haskell-docs-idents.index"
+getIndexFilename :: IO FilePath
+getIndexFilename =
+  do flags <- getPkgFlags
+     return ("haskell-docs-" ++ sha1 flags ++ ".index")
 
 -- * Internally looking up inside indexes
 
@@ -119,6 +127,7 @@ lookupInIndex
   -> IO (Maybe (HashMap Text [Text]))
 lookupInIndex (T.encodeUtf8 -> ident) =
   do d <- getTemporaryDirectory
+     indexFilename <- getIndexFilename
      h <- openFile (d </> indexFilename) ReadMode
      E.catch
          (fix (\loop ->
@@ -138,3 +147,17 @@ extractModules = foldl' ins mempty . mapMaybe unpair . chunks . T.decodeUtf8
                      [package,modu] -> Just (package,modu)
                      _ -> Nothing
         ins m (pkg,modu) = M.insertWith (++) pkg [modu] m
+
+-- | SHA1 hex-encode a string.
+sha1 :: String -> String
+sha1 = S8.unpack . B16.encode . SHA1.hash . S8.pack
+
+-- | Get unique package flags string.
+getPkgFlags :: IO String
+getPkgFlags =
+  do env <- getEnvironment
+     case lookup "HSENV" env >> lookup "PACKAGE_DB_FOR_GHC" env of
+       Just uflags -> return uflags
+       Nothing -> case lookup "GHC_PACKAGE_PATH" env of
+           Just path -> return ("-no-user-pg-db" ++ "-pkg-db=" ++ path)
+           Nothing -> readProcess "ghc-pkg" ["--version"] ""
