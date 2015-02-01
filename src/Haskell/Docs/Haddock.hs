@@ -10,6 +10,7 @@
 module Haskell.Docs.Haddock where
 
 import           Haskell.Docs.Cabal
+import           Haskell.Docs.HaddockDoc
 import           Haskell.Docs.Ghc
 import           Haskell.Docs.Types
 
@@ -148,32 +149,6 @@ searchWithInterface package name interface =
                             d
                             mi
                             margs])
-
--- * Get documentation of parts of things
-
--- | Get a mapping from names to doc string of that name from a
--- Haddock interface.
-interfaceNameMap :: InstalledInterface -> Map String (Doc String)
-#if MIN_VERSION_haddock(2,10,0)
-interfaceNameMap iface =
-  M.fromList (map (second (fmap getOccString) . first getOccString)
-             (M.toList (instDocMap iface)))
-#else
-interfaceNameMap iface =
-  M.fromList (map (second (fmap getOccString . maybe DocEmpty id . fst) . first getOccString)
-             (M.toList (instDocMap iface)))
-#endif
-
--- | Get a mapping from names to doc string of that name from a
--- Haddock interface.
-interfaceArgMap :: InstalledInterface -> Map String (Map Int (Doc Name))
-#if MIN_VERSION_haddock(2,10,0)
-interfaceArgMap iface =
-  M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
-#else
-interfaceArgMap iface = M.fromList (map (second (const M.empty) . first getOccString)
-                                        (M.toList (instDocMap iface)))
-#endif
 
 -- | Find arguments documentation for the identifier.
 lookupArgsDocs :: InstalledInterface -> Identifier -> Ghc (Maybe [(Int, Doc String)])

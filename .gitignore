@@ -1,4 +1,4 @@
-haddock-*
+./haddock-*
 cabal-dev/
 dist/
 TAGS

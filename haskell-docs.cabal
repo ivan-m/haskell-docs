@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             4.2.2
+version:             4.2.3
 synopsis:            A program to find and display the docs and type of a name
 description:         Given a module name and a name, or just a name, it will find and display
                      the documentation of that name.
@@ -54,14 +54,18 @@ Bug-Reports:         http://github.com/chrisdone/haskell-docs/issues
 
 library
   ghc-options:         -O2 -Wall
-  hs-source-dirs:      src
+  if impl(ghc>=7.8.4)
+    hs-source-dirs: src, src/haddock-api
+  if impl(ghc<7.8.4)
+    hs-source-dirs: src, src/haddock
   exposed-modules:     Haskell.Docs,
                        Haskell.Docs.Ghc,
                        Haskell.Docs.Cabal,
                        Haskell.Docs.Formatting,
                        Haskell.Docs.Haddock,
                        Haskell.Docs.Types,
-                       Haskell.Docs.Index
+                       Haskell.Docs.Index,
+                       Haskell.Docs.HaddockDoc
   build-depends:       Cabal
                      , aeson
                      , base > 4 && < 5
@@ -78,7 +82,9 @@ library
                      , text
                      , text
                      , unordered-containers
-  if impl(ghc==7.8.*)
+  if impl(ghc==7.8.4)
+    build-depends: haddock-api==2.15.*
+  if impl(ghc==7.8.3)
     build-depends: haddock==2.14.*
   if impl(ghc==7.6.*)
     build-depends: haddock==2.13.*
@@ -87,8 +93,8 @@ library
   if impl(ghc==7.2.*)
     build-depends: haddock==2.9.*
 
-  if impl(ghc>=7.8)
-    build-depends: haddock
+  if impl(ghc>=7.8.4)
+    build-depends: haddock-api
   if impl(ghc<7.2)
     build-depends: haddock
 
