@@ -126,13 +126,13 @@ searchWithInterface
   -> InstalledInterface
   -> Ghc (Either DocsException [IdentDoc])
 searchWithInterface package name interface =
-  case find ((==name) . Identifier . getOccString) (instExports interface) of
+  case find ((==name) . Identifier . getOccString) (instExports interface) of -- See if the module exports the Identifier
     Nothing ->
       return (Left NoFindNameInExports)
     Just{} ->
-      case M.lookup (unIdentifier name) (interfaceNameMap interface) of
+      case M.lookup (unIdentifier name) (interfaceNameMap interface) of       -- See if it is defined in the module itself
         Nothing ->
-          case lookup (unIdentifier name) (map (getOccString &&& id) (instExports interface)) of
+          case lookup (unIdentifier name) (map (getOccString &&& id) (instExports interface)) of -- See if it is re-exported
             Just subname
               | moduleName (nameModule subname) /= moduleName (instMod interface) ->
                 descendSearch package name subname
@@ -187,4 +187,4 @@ getHaddockInterfacesByPackage =
 -- restart our search process.
 descendSearch :: PackageConfig -> Identifier -> Name -> Ghc (Either DocsException [IdentDoc])
 descendSearch package name qname = do
-  searchModuleIdent (Just package) (moduleName (nameModule qname)) name
+  searchModuleIdent Nothing (moduleName (nameModule qname)) name
