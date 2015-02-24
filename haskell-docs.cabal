@@ -1,5 +1,5 @@
 name:                haskell-docs
-version:             4.2.3
+version:             4.2.4
 synopsis:            A program to find and display the docs and type of a name
 description:         Given a module name and a name, or just a name, it will find and display
                      the documentation of that name.
@@ -51,6 +51,16 @@ build-type:          Simple
 cabal-version:       >=1.8
 Homepage:            http://github.com/chrisdone/haskell-docs
 Bug-Reports:         http://github.com/chrisdone/haskell-docs/issues
+extra-source-files:
+  src/Haskell/Docs.hs
+  src/Haskell/Docs/Ghc.hs
+  src/Haskell/Docs/Cabal.hs
+  src/Haskell/Docs/Formatting.hs
+  src/Haskell/Docs/Haddock.hs
+  src/Haskell/Docs/Types.hs
+  src/Haskell/Docs/Index.hs
+  src/haddock/Haskell/Docs/HaddockDoc.hs
+  src/haddock-api/Haskell/Docs/HaddockDoc.hs
 
 library
   ghc-options:         -O2 -Wall
