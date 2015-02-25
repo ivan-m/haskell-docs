@@ -38,7 +38,7 @@ searchIdent
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
 searchIdent gs mprevious name =
-  do packages <- fmap (filterPrevious mprevious) (getAllPackages gs)
+  do packages <- fmap (excludePrevious mprevious) (getAllPackages gs)
      searchInPackages packages
                       Nothing
                       name
@@ -50,7 +50,7 @@ searchModuleIdent
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
 searchModuleIdent mprevious mname name =
-  do result <- fmap (filterPrevious mprevious) (getPackagesByModule mname)
+  do result <- fmap (excludePrevious mprevious) (getPackagesByModule mname)
      case result of
        [] ->
          return (Left NoFindModule)
@@ -69,7 +69,7 @@ searchPackageModuleIdent
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
 searchPackageModuleIdent mprevious pname mname name =
-  do result <- fmap (filterPrevious mprevious) (getPackagesByModule mname)
+  do result <- fmap (excludePrevious mprevious) (getPackagesByModule mname)
      case result of
        [] -> return (Left NoFindModule)
        packages ->
@@ -79,7 +79,7 @@ searchPackageModuleIdent mprevious pname mname name =
            Just package ->
              searchWithPackage package (Just mname) name
 
-filterPrevious exclude =
+excludePrevious exclude =
   filter (maybe (const True)
                 (on (/=) sourcePackageId)
                 exclude)
