@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE RecordWildCards #-}
 
 -- | Cabal.
 
@@ -17,7 +16,12 @@ import Distribution.Simple.PackageIndex
 import DynFlags
 import GHC
 import Module
+
+#if __GLASGOW_HASKELL__ >= 710
+import PackageConfig hiding (InstalledPackageInfo (..))
+#else
 import PackageConfig
+#endif
 
 -- * Cabal
 
@@ -34,7 +38,11 @@ getAllPackages _gs =
      return (fromMaybe [] (pkgDatabase flags))
 
 -- | Version-portable version of allPackagesByName.
+#if MIN_VERSION_Cabal (1,22,0)
+packagesByName :: InstalledPackageIndex -> [[InstalledPackageInfo]]
+#else
 packagesByName :: PackageIndex -> [[InstalledPackageInfo]]
+#endif
 #if MIN_VERSION_Cabal(1,16,0)
 packagesByName = map snd . allPackagesByName
 #else

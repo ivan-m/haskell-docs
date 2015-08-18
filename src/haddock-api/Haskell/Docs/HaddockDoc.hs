@@ -5,31 +5,15 @@
 module Haskell.Docs.HaddockDoc where
 
 import           Control.Arrow
-import           Control.Exception (try,IOException)
-import           Control.Monad
-import           Control.Monad
 import           Data.Char
-import           Data.Either
-import           Data.Function
-import           Data.List
-import           Data.List
-import           Data.Map (Map)
-import qualified Data.Map as M
-import           Documentation.Haddock
-import           Documentation.Haddock
-import           GHC hiding (verbosity)
-import           GHC hiding (verbosity)
-import           GhcMonad (liftIO)
-import           GhcMonad (liftIO)
-import           Haskell.Docs.Cabal
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Types
-import           Haskell.Docs.Types
-import           Name
-import           Name
-import           PackageConfig
-import           Packages
+import           Data.Map                    (Map)
+import qualified Data.Map                    as M
+import           Documentation.Haddock       (Doc, DocH (..), Example (..),
+                                              Hyperlink (..),
+                                              InstalledInterface (..))
+import           Documentation.Haddock.Types (_doc)
+import           GHC                         (Name, moduleNameString)
+import           Name                        (getOccString, occNameString)
 
 -- | Render the doc.
 doc :: Doc String -> String
@@ -63,15 +47,28 @@ doc (DocHeader _) = ""
 -- | Get a mapping from names to doc string of that name from a
 -- Haddock interface.
 interfaceNameMap :: InstalledInterface -> Map String (Doc String)
-interfaceNameMap iface =
-  M.fromList (map (second (fmap getOccString) . first getOccString)
-             (M.toList (instDocMap iface)))
+interfaceNameMap = M.fromList
+                   . map ( getOccString
+                           ***
+#if MIN_VERSION_haddock_api(2,16,0)
+                           _doc .
+#endif
+                             fmap getOccString
+                         )
+                   . M.toList
+                   . instDocMap
 
 -- | Get a mapping from names to doc string of that name from a
 -- Haddock interface.
 interfaceArgMap :: InstalledInterface -> Map String (Map Int (Doc Name))
-interfaceArgMap iface =
-  M.fromList (map (first getOccString) (M.toList (instArgMap iface)))
+interfaceArgMap = M.fromList
+#if MIN_VERSION_haddock_api(2,16,0)
+                  . map (getOccString *** fmap _doc)
+#else
+                  . map (first getOccString)
+#endif
+                  . M.toList
+                  . instArgMap
 
 -- | Strip redundant whitespace.
 normalize :: [Char] -> [Char]

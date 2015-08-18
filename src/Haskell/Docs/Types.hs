@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE CPP #-}
 
 -- | All types.
 
@@ -6,16 +7,26 @@ module Haskell.Docs.Types
   (IdentDoc(..)
   ,DocsException(..)
   ,Identifier(..)
-  ,PackageName(..))
+  ,PackageName(..)
+  ,PkgID)
   where
 
 import Control.Exception (Exception)
 import Data.Text (Text)
 import Data.Typeable (Typeable)
 import Documentation.Haddock (Doc)
-import GHC (Id)
+import GHC            (Id)
 import Module (ModuleName)
+
+#if __GLASGOW_HASKELL__ >= 710
+import Module (PackageKey)
+
+type PkgID = PackageKey
+#else
 import PackageConfig (PackageIdentifier)
+
+type PkgID = PackageIdentifier
+#endif
 
 -- | An identifier.
 newtype Identifier = Identifier {unIdentifier :: String}
@@ -27,7 +38,7 @@ newtype PackageName = PackageName String
 
 -- | Identier documentation along with argument docs and identifiers.
 data IdentDoc = IdentDoc
-  { identDocPackageName :: !PackageIdentifier
+  { identDocPackageName :: !PkgID
   , identDocIdentifier  :: !Identifier
   , identDocModuleName  :: !ModuleName
   , identDocDocs        :: !(Doc String)

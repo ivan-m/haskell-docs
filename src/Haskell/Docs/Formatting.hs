@@ -4,17 +4,15 @@
 
 module Haskell.Docs.Formatting where
 
-import Haskell.Docs.Types
 import Haskell.Docs.Ghc
 import Haskell.Docs.HaddockDoc
+import Haskell.Docs.Types
 
 import Control.Monad
-import Data.Char
 import Data.List
 import Documentation.Haddock
 import GHC hiding (verbosity)
 import GhcMonad (liftIO)
-import Name
 
 -- * Formatting
 

@@ -1,46 +1,48 @@
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE TupleSections       #-}
+{-# LANGUAGE ViewPatterns        #-}
 
 -- | Make an index from identifiers to modules.
 
 module Haskell.Docs.Index where
 
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Haddock
+import Haskell.Docs.Ghc
+import Haskell.Docs.Haddock
 
-import           Control.Exception as E
+import           Control.Exception        as E
 import           Control.Monad
-import qualified Crypto.Hash.SHA1 as SHA1
-import           Data.ByteString (ByteString)
-import qualified Data.ByteString as S
-import qualified Data.ByteString.Base16 as B16
-import qualified Data.ByteString.Char8 as S8
+import qualified Crypto.Hash.SHA1         as SHA1
+import           Data.ByteString          (ByteString)
+import qualified Data.ByteString          as S
+import qualified Data.ByteString.Base16   as B16
+import qualified Data.ByteString.Char8    as S8
 import qualified Data.ByteString.Internal as S
-import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy     as L
 import           Data.Char
 import           Data.Either
 import           Data.Function
-import           Data.HashMap.Strict (HashMap)
-import qualified Data.HashMap.Strict as M
+import           Data.HashMap.Strict      (HashMap)
+import qualified Data.HashMap.Strict      as M
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
-import           Data.Text (Text,pack)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.Text.IO as T
+import           Data.Text                (Text, pack)
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as T
+import qualified Data.Text.IO             as T
 import           Documentation.Haddock
-import           GHC hiding (verbosity)
+import           GHC                      hiding (verbosity)
 import           Name
-import           PackageConfig
-import           Prelude
 import           System.Directory
 import           System.Environment
 import           System.FilePath
 import           System.IO
-import           System.Process
+import           System.Process           (readProcess)
+
+#if !(MIN_VERSION_base(4,8,0))
+import Data.Monoid (mappend)
+#endif
 
 -- * Looking up identifiers
 
@@ -81,8 +83,8 @@ generateFlatFile :: [String] -> IO [(String, String, String)]
 generateFlatFile flags =
   do packages <- withInitializedPackages
                    flags
-                   (do flags <- getSessionDynFlags
-                       return (fromMaybe [] (pkgDatabase flags)))
+                   (do df <- getSessionDynFlags
+                       return (fromMaybe [] (pkgDatabase df)))
      fmap (concat . map explode . concat)
           (forM packages
                 (\package ->
@@ -90,7 +92,7 @@ generateFlatFile flags =
                       return
                         (concat
                            (map (map (\iface ->
-                                        (sourcePackageId package
+                                        (getIdentifier package
                                         ,instMod iface
                                         ,instVisibleExports iface)) .
                                  ifInstalledIfaces)
