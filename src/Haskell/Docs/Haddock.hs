@@ -1,33 +1,29 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE StandaloneDeriving #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 
 -- | Haddock compatibilty layer and query functions.
 
 module Haskell.Docs.Haddock where
 
-import           Haskell.Docs.Cabal
-import           Haskell.Docs.HaddockDoc
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Types
+import Haskell.Docs.Cabal
+import Haskell.Docs.Ghc
+import Haskell.Docs.HaddockDoc
+import Haskell.Docs.Types
 
 import           Control.Arrow
-import           Control.Exception (try,IOException)
+import           Control.Exception     (IOException, try)
 import           Control.Monad
 import           Data.Either
 import           Data.Function
 import           Data.List
-import           Data.Map (Map)
-import qualified Data.Map as M
+import qualified Data.Map              as M
 import           Documentation.Haddock
-import           GHC hiding (verbosity)
-import           GhcMonad (liftIO)
+import           GHC                   hiding (verbosity)
+import           GhcMonad              (liftIO)
 import           Name
-import           PackageConfig
-import           Packages
+import           PackageConfig         hiding (PackageName)
+import           Packages              hiding (PackageName)
 
 -- * Searching for ident docs
 
@@ -73,11 +69,19 @@ searchPackageModuleIdent mprevious pname mname name =
      case result of
        [] -> return (Left NoFindModule)
        packages ->
-         case find ((== pname) . PackageName . showPackageName . sourcePackageId) packages of
+         case find ((== pname) . PackageName . showPackageName . getIdentifier) packages of
            Nothing ->
              return (Left NoModulePackageCombo)
            Just package ->
              searchWithPackage package (Just mname) name
+
+-- | Obtain the current notion of a package identifier.
+getIdentifier :: PackageConfig -> PkgID
+#if __GLASGOW_HASKELL__ >= 710
+getIdentifier = packageKey
+#else
+getIdentifier = sourcePackageId
+#endif
 
 excludePrevious exclude =
   filter (maybe (const True)
@@ -143,7 +147,7 @@ searchWithInterface package name interface =
              margs <- lookupArgsDocs interface name
              return
                (Right
-                  [IdentDoc (sourcePackageId package)
+                  [IdentDoc (getIdentifier package)
                             name
                             (moduleName (instMod interface))
                             d
@@ -163,11 +167,17 @@ lookupArgsDocs interface name = do
 -- | Search for a module's package, returning suggestions if not
 -- found. Filters out the given value.
 getPackagesByModule :: ModuleName -> Ghc [PackageConfig]
+#if __GLASGOW_HASKELL__ >= 710
+getPackagesByModule m =
+  do df <- getSessionDynFlags
+     return . map snd $ lookupModuleInAllPackages df m
+#else
 getPackagesByModule m =
   do df <- getSessionDynFlags
      return (either (const [])
                     (map fst)
                     (lookupModuleWithSuggestions df m))
+#endif
 
 -- | Get the Haddock interfaces of the given package.
 getHaddockInterfacesByPackage :: PackageConfig -> IO [Either DocsException InterfaceFile]
@@ -186,5 +196,5 @@ getHaddockInterfacesByPackage =
 -- intended, so we descend into the module that it does exist in and
 -- restart our search process.
 descendSearch :: PackageConfig -> Identifier -> Name -> Ghc (Either DocsException [IdentDoc])
-descendSearch package name qname = do
+descendSearch _package name qname =
   searchModuleIdent Nothing (moduleName (nameModule qname)) name

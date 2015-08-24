@@ -85,13 +85,16 @@ library
                      , cryptohash
                      , directory
                      , filepath
-                     , ghc >= 7.2 && < 7.9
+                     , ghc >= 7.2 && < 7.11
                      , ghc-paths
                      , monad-loops
                      , process
                      , text
                      , text
                      , unordered-containers
+  if impl(ghc==7.10.*)
+     build-depends:   haddock-api==2.16.*
+                    , haddock-library
   if impl(ghc==7.8.4)
     build-depends: haddock-api==2.15.*
   if impl(ghc==7.8.3)

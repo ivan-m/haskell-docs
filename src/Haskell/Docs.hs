@@ -1,5 +1,5 @@
-{-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE ViewPatterns  #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
@@ -10,23 +10,22 @@ module Haskell.Docs
   ,PackageName(..))
   where
 
-import           Haskell.Docs.Cabal
-import           Haskell.Docs.Formatting
-import           Haskell.Docs.Ghc
-import           Haskell.Docs.Haddock
-import           Haskell.Docs.Index
-import           Haskell.Docs.Types
-import           PackageConfig
+import Haskell.Docs.Cabal
+import Haskell.Docs.Formatting
+import Haskell.Docs.Ghc
+import Haskell.Docs.Haddock
+import Haskell.Docs.Index
+import Haskell.Docs.Types
+import PackageConfig           hiding (PackageName)
 
 import           Control.Exception
 import           Control.Monad
 import qualified Data.HashMap.Strict as M
 import           Data.List
 import           Data.Ord
-import           Data.Text (pack,unpack)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import           GHC hiding (verbosity)
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as T
+import           GHC                 hiding (verbosity)
 import           MonadUtils
 
 -- -- | Print the documentation of a name in the given module.
@@ -38,9 +37,9 @@ searchAndPrintDoc
   -> Maybe ModuleName  -- ^ Module name.
   -> Identifier        -- ^ Identifier.
   -> Ghc ()
-searchAndPrintDoc flags ms ss pname mname ident =
+searchAndPrintDoc flags _ms ss _pname _mname ident =
   do result <- liftIO (lookupIdent flags
-                                   (pack (unIdentifier ident)))
+                                   (T.pack (unIdentifier ident)))
      case result of
        Nothing -> throw NoFindModule
        Just pkgModuleMap ->
@@ -50,7 +49,7 @@ searchAndPrintDoc flags ms ss pname mname ident =
                                (searchResult pkgs))
             if ss
                then printSexp docs
-               else mapM_ (\(i,doc') ->
+               else mapM_ (\(_,doc') ->
                              printIdentDoc False True True doc')
                           (zip [0 :: Int ..]
                                (nub docs))
@@ -58,8 +57,8 @@ searchAndPrintDoc flags ms ss pname mname ident =
           case find (matchingPkg pkgName) pkgs of
             Nothing -> return []
             Just pkg -> searchPkg pkg modName
-          where matchingPkg pkgName = (== pkgName) . T.pack . showPackageName .
-                                      sourcePackageId
+          where matchingPkg pkgNm = (== pkgNm) . T.pack . showPackageName .
+                                    getIdentifier
         searchPkg pkg modName =
           do result <- searchWithPackage
                          pkg
@@ -72,7 +71,7 @@ searchAndPrintDoc flags ms ss pname mname ident =
 -- | Search only for identifiers and print out all modules associated.
 searchAndPrintModules :: [String] -> Identifier -> IO ()
 searchAndPrintModules flags ident =
-  do result <- lookupIdent flags (pack (unIdentifier ident))
+  do result <- lookupIdent flags (T.pack (unIdentifier ident))
      case result of
        Nothing ->
          throw NoFindModule
