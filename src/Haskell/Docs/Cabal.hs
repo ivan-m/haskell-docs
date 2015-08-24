@@ -46,9 +46,3 @@ packagesByName = allPackagesByName
 -- | Convert a Cabal module name to a GHC module name.
 convModule :: Distribution.ModuleName.ModuleName -> Module.ModuleName
 convModule = makeModuleName . intercalate "." . components
-
--- | Because no Functor instance is available.
-imap :: (a -> m) -> InstalledPackageInfo_ a -> InstalledPackageInfo_ m
-imap f i@(InstalledPackageInfo{..}) =
-  i { exposedModules = map f exposedModules
-    , hiddenModules = map f hiddenModules }
