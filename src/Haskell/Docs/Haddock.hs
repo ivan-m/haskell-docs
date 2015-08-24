@@ -19,11 +19,11 @@ import           Data.Function
 import           Data.List
 import qualified Data.Map              as M
 import           Documentation.Haddock
-import           GHC                   hiding (verbosity)
+import           GHC
 import           GhcMonad              (liftIO)
 import           Name
-import           PackageConfig         hiding (PackageName)
-import           Packages              hiding (PackageName)
+import           PackageConfig
+import           Packages
 
 -- * Searching for ident docs
 
