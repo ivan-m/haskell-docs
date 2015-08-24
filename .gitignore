@@ -2,3 +2,5 @@
 cabal-dev/
 dist/
 TAGS
+.cabal-sandbox/
+cabal.sandbox.config
