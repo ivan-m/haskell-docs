@@ -41,7 +41,7 @@ import           System.IO
 import           System.Process           (readProcess)
 
 #if !(MIN_VERSION_base(4,8,0))
-import Data.Monoid (mappend)
+import Data.Monoid (mappend, mempty)
 #endif
 
 -- * Looking up identifiers
