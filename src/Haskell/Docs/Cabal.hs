@@ -29,19 +29,9 @@ getGhcOpsPackageDB gs = map (SpecificPackageDB . trim) pkgDBOps
 
 -- | Get all installed packages, filtering out the given package.
 getAllPackages :: [String] -> Ghc [PackageConfig.PackageConfig]
-getAllPackages gs =
+getAllPackages _gs =
   do flags <- getSessionDynFlags
      return (fromMaybe [] (pkgDatabase flags))
-  -- do config <- configureAllKnownPrograms
-  --                normal
-  --                (addKnownPrograms [ghcProgram,ghcPkgProgram]
-  --                                  emptyProgramConfiguration)
-  --    index <- getInstalledPackages
-  --               normal
-  --               (concat [[GlobalPackageDB,UserPackageDB],getGhcOpsPackageDB gs])
-  --               config
-  --    return (map (imap convModule)
-  --                (concat (packagesByName index)))
 
 -- | Version-portable version of allPackagesByName.
 packagesByName :: PackageIndex -> [[InstalledPackageInfo]]
