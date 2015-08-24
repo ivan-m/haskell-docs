@@ -1,17 +1,17 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE CPP #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 
 -- | Ghc compatibility layer.
 
 module Haskell.Docs.Ghc where
 
-import           Haskell.Docs.Types
+import Haskell.Docs.Types
 
 import           Control.Exception (SomeException)
-import           GHC hiding (verbosity)
-import           GHC.Paths (libdir)
-import           GhcMonad (liftIO)
+import           GHC               hiding (verbosity)
+import           GHC.Paths         (libdir)
+import           GhcMonad          (liftIO)
 import           Module
 import           Name
 import           Outputable
@@ -19,9 +19,9 @@ import           Packages
 import qualified SrcLoc
 
 #if __GLASGOW_HASKELL__ < 706
-import           DynFlags (defaultLogAction)
+import DynFlags (defaultLogAction)
 #else
-import           DynFlags (defaultFlushOut, defaultFatalMessager)
+import DynFlags (defaultFatalMessager, defaultFlushOut)
 #endif
 
 -- * GHC actions
@@ -81,6 +81,9 @@ showSDocForUser = Outputable.showSDocForUser
 #if __GLASGOW_HASKELL__ == 708
 showSDocForUser = Outputable.showSDocForUser
 #endif
+#if __GLASGOW_HASKELL__ == 710
+showSDocForUser = Outputable.showSDocForUser
+#endif
 
 -- | Set the import context.
 setImportContext :: ModuleName -> Ghc ()
@@ -91,5 +94,10 @@ setImportContext mname = setContext [IIDecl (simpleImportDecl mname)]
 #endif
 
 -- | Show the package name e.g. base.
+#if __GLASGOW_HASKELL__ >= 710
+showPackageName :: PackageKey -> String
+showPackageName = packageKeyString
+#else
 showPackageName :: PackageIdentifier -> String
 showPackageName = packageIdString . mkPackageId
+#endif
