@@ -9,7 +9,7 @@ module Haskell.Docs.Haddock where
 import Haskell.Docs.Cabal
 import Haskell.Docs.Ghc
 import Haskell.Docs.HaddockDoc
-import Haskell.Docs.Types
+import Haskell.Docs.Types as T
 
 import           Control.Arrow
 import           Control.Exception     (IOException, try)
@@ -60,7 +60,7 @@ searchModuleIdent mprevious mname name =
 -- | Search a name in the given module from the given package.
 searchPackageModuleIdent
   :: Maybe PackageConfig
-  -> PackageName
+  -> T.PackageName
   -> ModuleName
   -> Identifier
   -> Ghc (Either DocsException [IdentDoc])
@@ -69,7 +69,7 @@ searchPackageModuleIdent mprevious pname mname name =
      case result of
        [] -> return (Left NoFindModule)
        packages ->
-         case find ((== pname) . PackageName . showPackageName . getIdentifier) packages of
+         case find ((== pname) . T.PackageName . showPackageName . getIdentifier) packages of
            Nothing ->
              return (Left NoModulePackageCombo)
            Just package ->
