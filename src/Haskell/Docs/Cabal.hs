@@ -18,7 +18,7 @@ import GHC
 import Module
 
 #if __GLASGOW_HASKELL__ >= 710
-import PackageConfig hiding (InstalledPackageInfo (..))
+import PackageConfig hiding (InstalledPackageInfo(..))
 #else
 import PackageConfig
 #endif
@@ -35,7 +35,14 @@ getGhcOpsPackageDB gs = map (SpecificPackageDB . trim) pkgDBOps
 getAllPackages :: [String] -> Ghc [PackageConfig.PackageConfig]
 getAllPackages _gs =
   do flags <- getSessionDynFlags
-     return (fromMaybe [] (pkgDatabase flags))
+     return (fromMaybe [] (pkgDB flags))
+
+pkgDB :: DynFlags -> Maybe [PackageConfig]
+#if __GLASGOW_HASKELL__ >= 800
+pkgDB = fmap (concatMap snd) . pkgDatabase
+#else
+pkgDB = pkgDatabase
+#endif
 
 -- | Version-portable version of allPackagesByName.
 #if MIN_VERSION_Cabal (1,22,0)

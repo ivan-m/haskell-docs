@@ -1,5 +1,4 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 
 -- | Ghc compatibility layer.
@@ -47,7 +46,7 @@ findIdentifier mname name =
              mty <- lookupName (head (filter ((==unIdentifier name).getOccString) names))
              case mty of
                Just (AnId i) -> return (Just i)
-               _ -> return Nothing)
+               _             -> return Nothing)
          (\(_ :: SomeException) -> return Nothing)
 
 -- | Make a module name.
@@ -84,6 +83,9 @@ showSDocForUser = Outputable.showSDocForUser
 #if __GLASGOW_HASKELL__ == 710
 showSDocForUser = Outputable.showSDocForUser
 #endif
+#if __GLASGOW_HASKELL__ == 800
+showSDocForUser = Outputable.showSDocForUser
+#endif
 
 -- | Set the import context.
 setImportContext :: ModuleName -> Ghc ()
@@ -94,10 +96,11 @@ setImportContext mname = setContext [IIDecl (simpleImportDecl mname)]
 #endif
 
 -- | Show the package name e.g. base.
-#if __GLASGOW_HASKELL__ >= 710
-showPackageName :: PackageKey -> String
+showPackageName :: PkgID -> String
+#if __GLASGOW_HASKELL__ >= 800
+showPackageName = unitIdString
+#elif __GLASGOW_HASKELL__ >= 710
 showPackageName = packageKeyString
 #else
-showPackageName :: PackageIdentifier -> String
 showPackageName = packageIdString . mkPackageId
 #endif

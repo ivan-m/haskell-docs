@@ -18,7 +18,11 @@ import Documentation.Haddock (Doc)
 import GHC            (Id)
 import Module (ModuleName)
 
-#if __GLASGOW_HASKELL__ >= 710
+#if __GLASGOW_HASKELL__ >= 800
+import Module (UnitId)
+
+type PkgID = UnitId
+#elif __GLASGOW_HASKELL__ >= 710
 import Module (PackageKey)
 
 type PkgID = PackageKey

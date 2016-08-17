@@ -8,9 +8,9 @@ import           Control.Arrow
 import           Data.Char
 import           Data.Map                    (Map)
 import qualified Data.Map                    as M
-import           Documentation.Haddock       (Doc, DocH (..), Example (..),
-                                              Hyperlink (..),
-                                              InstalledInterface (..))
+import           Documentation.Haddock       (Doc, DocH(..), Example(..),
+                                              Hyperlink(..),
+                                              InstalledInterface(..))
 import           Documentation.Haddock.Types (_doc)
 import           GHC                         (Name, moduleNameString)
 import           Name                        (getOccString, occNameString)
@@ -30,6 +30,10 @@ doc (DocDefList xs) = unlines (map (\(i,x) -> doc i ++ ". " ++ doc x) xs)
 doc (DocCodeBlock bl) = unlines (map ("    " ++) (lines (doc bl))) ++ "\n"
 doc (DocAName name) = name
 doc (DocExamples exs) = unlines (map formatExample exs)
+#if MIN_VERSION_haddock_api (2,17,0)
+doc (DocMathInline mth) = mth
+doc (DocMathDisplay mth) = mth
+#endif
 
 -- The header type is unexported, so this constructor is useless.
 doc (DocIdentifier i) = i
