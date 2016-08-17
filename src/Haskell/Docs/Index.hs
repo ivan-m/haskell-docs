@@ -1,13 +1,11 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE OverloadedStrings   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TupleSections       #-}
-{-# LANGUAGE ViewPatterns        #-}
+{-# LANGUAGE CPP, OverloadedStrings, ScopedTypeVariables, TupleSections,
+             ViewPatterns #-}
 
 -- | Make an index from identifiers to modules.
 
 module Haskell.Docs.Index where
 
+import Haskell.Docs.Cabal   (pkgDB)
 import Haskell.Docs.Ghc
 import Haskell.Docs.Haddock
 
@@ -84,7 +82,7 @@ generateFlatFile flags =
   do packages <- withInitializedPackages
                    flags
                    (do df <- getSessionDynFlags
-                       return (fromMaybe [] (pkgDatabase df)))
+                       return (fromMaybe [] (pkgDB df)))
      fmap (concat . map explode . concat)
           (forM packages
                 (\package ->
@@ -147,7 +145,7 @@ extractModules = foldl' ins mempty . mapMaybe unpair . chunks . T.decodeUtf8
   where chunks = T.split isSpace
         unpair t = case T.split (==':') t of
                      [package,modu] -> Just (package,modu)
-                     _ -> Nothing
+                     _              -> Nothing
         ins m (pkg,modu) = M.insertWith (++) pkg [modu] m
 
 -- | SHA1 hex-encode a string.
@@ -162,4 +160,4 @@ getPkgFlags =
        Just uflags -> return uflags
        Nothing -> case lookup "GHC_PACKAGE_PATH" env of
            Just path -> return ("-no-user-pg-db" ++ "-pkg-db=" ++ path)
-           Nothing -> readProcess "ghc-pkg" ["--version"] ""
+           Nothing   -> readProcess "ghc-pkg" ["--version"] ""

@@ -1,5 +1,4 @@
-{-# LANGUAGE CPP                 #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE CPP, ScopedTypeVariables #-}
 {-# OPTIONS -Wall -fno-warn-missing-signatures #-}
 
 -- | Haddock compatibilty layer and query functions.
@@ -9,7 +8,7 @@ module Haskell.Docs.Haddock where
 import Haskell.Docs.Cabal
 import Haskell.Docs.Ghc
 import Haskell.Docs.HaddockDoc
-import Haskell.Docs.Types as T
+import Haskell.Docs.Types      as T
 
 import           Control.Arrow
 import           Control.Exception     (IOException, try)
@@ -77,7 +76,9 @@ searchPackageModuleIdent mprevious pname mname name =
 
 -- | Obtain the current notion of a package identifier.
 getIdentifier :: PackageConfig -> PkgID
-#if __GLASGOW_HASKELL__ >= 710
+#if __GLASGOW_HASKELL__ >= 800
+getIdentifier = packageConfigId
+#elif __GLASGOW_HASKELL__ >= 710
 getIdentifier = packageKey
 #else
 getIdentifier = sourcePackageId
@@ -188,7 +189,7 @@ getHaddockInterfacesByPackage =
           do result <- try (readInterfaceFile cache p)
              case result of
                Left (_::IOException) -> return (Left "Couldn't read file.")
-               Right r -> return r
+               Right r               -> return r
 
 -- * Internal functions
 

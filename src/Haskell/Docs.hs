@@ -1,5 +1,4 @@
-{-# LANGUAGE TupleSections #-}
-{-# LANGUAGE ViewPatterns  #-}
+{-# LANGUAGE TupleSections, ViewPatterns #-}
 
 -- | Lookup the documentation of a name in a module (and in a specific
 -- package in the case of ambiguity).
@@ -16,7 +15,6 @@ import Haskell.Docs.Ghc
 import Haskell.Docs.Haddock
 import Haskell.Docs.Index
 import Haskell.Docs.Types
-import PackageConfig           hiding (PackageName)
 
 import           Control.Exception
 import           Control.Monad
@@ -55,7 +53,7 @@ searchAndPrintDoc flags _ms ss _pname _mname ident =
                                (nub docs))
   where searchResult pkgs (pkgName,modName) =
           case find (matchingPkg pkgName) pkgs of
-            Nothing -> return []
+            Nothing  -> return []
             Just pkg -> searchPkg pkg modName
           where matchingPkg pkgNm = (== pkgNm) . T.pack . showPackageName .
                                     getIdentifier

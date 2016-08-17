@@ -48,6 +48,8 @@ maintainer:          Ivan.Miljenovic@gmail.com
 copyright:           2012 Chris Done
 category:            Development
 build-type:          Simple
+Tested-With:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4,
+                     GHC == 7.10.2, GHC == 8.0.1, GHC == 8.1.*
 cabal-version:       >=1.8
 Homepage:            http://github.com/ivan-m/haskell-docs
 Bug-Reports:         http://github.com/ivan-m/haskell-docs/issues
@@ -63,7 +65,7 @@ extra-source-files:
   src/haddock-api/Haskell/Docs/HaddockDoc.hs
 
 library
-  ghc-options:         -O2 -Wall
+  ghc-options:         -Wall
   if impl(ghc>=7.8.4)
     hs-source-dirs: src, src/haddock-api
   if impl(ghc<7.8.4)
@@ -85,31 +87,31 @@ library
                      , cryptohash
                      , directory
                      , filepath
-                     , ghc >= 7.2 && < 7.11
+                     , ghc >= 7.4 && < 8.1
                      , ghc-paths
                      , monad-loops
                      , process
                      , text
                      , text
                      , unordered-containers
+  if impl(ghc==8.0.*)
+     build-depends:   haddock-api==2.17.*
+                    , haddock-library
   if impl(ghc==7.10.*)
      build-depends:   haddock-api==2.16.*
                     , haddock-library
   if impl(ghc==7.8.4)
-    build-depends: haddock-api==2.15.*
+    build-depends:    haddock-api==2.15.*
+                    , haddock-library
   if impl(ghc==7.8.3)
     build-depends: haddock==2.14.*
   if impl(ghc==7.6.*)
     build-depends: haddock==2.13.*
   if impl(ghc==7.4.*)
     build-depends: haddock==2.11.*
-  if impl(ghc==7.2.*)
-    build-depends: haddock==2.9.*
 
   if impl(ghc>=7.8.4)
     build-depends: haddock-api
-  if impl(ghc<7.2)
-    build-depends: haddock
 
 executable haskell-docs
   hs-source-dirs:      src/main
