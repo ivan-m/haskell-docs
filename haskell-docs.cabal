@@ -101,7 +101,8 @@ library
      build-depends:   haddock-api==2.16.*
                     , haddock-library
   if impl(ghc==7.8.4)
-    build-depends: haddock-api==2.15.*
+    build-depends:    haddock-api==2.15.*
+                    , haddock-library
   if impl(ghc==7.8.3)
     build-depends: haddock==2.14.*
   if impl(ghc==7.6.*)
