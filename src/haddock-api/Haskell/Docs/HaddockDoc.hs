@@ -6,14 +6,16 @@ module Haskell.Docs.HaddockDoc where
 
 import           Control.Arrow
 import           Data.Char
-import           Data.Map                    (Map)
-import qualified Data.Map                    as M
-import           Documentation.Haddock       (Doc, DocH(..), Example(..),
-                                              Hyperlink(..),
-                                              InstalledInterface(..))
-import           Documentation.Haddock.Types (_doc)
-import           GHC                         (Name, moduleNameString)
-import           Name                        (getOccString, occNameString)
+import           Data.Map              (Map)
+import qualified Data.Map              as M
+import           Documentation.Haddock (Doc, DocH(..), Example(..),
+                                        Hyperlink(..), InstalledInterface(..))
+import           GHC                   (Name, moduleNameString)
+import           Name                  (getOccString, occNameString)
+
+#if MIN_VERSION_haddock_api(2,16,0)
+import Documentation.Haddock.Types (_doc)
+#endif
 
 -- | Render the doc.
 doc :: Doc String -> String
