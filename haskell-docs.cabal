@@ -39,18 +39,18 @@ description:         Given a module name and a name, or just a name, it will fin
                      .
                      /CONTRIBUTION AND ISSUES/
                      .
-                     Issues\/ideas\/contributions please make a Github issue: <http://github.com/chrisdone/haskell-docs/issues>
+                     Issues\/ideas\/contributions please make a Github issue: <http://github.com/ivan-m/haskell-docs/issues>
                      .
 license:             BSD3
 license-file:        LICENSE
 author:              Chris Done
-maintainer:          chrisdone@gmail.com
+maintainer:          Ivan.Miljenovic@gmail.com
 copyright:           2012 Chris Done
 category:            Development
 build-type:          Simple
 cabal-version:       >=1.8
-Homepage:            http://github.com/chrisdone/haskell-docs
-Bug-Reports:         http://github.com/chrisdone/haskell-docs/issues
+Homepage:            http://github.com/ivan-m/haskell-docs
+Bug-Reports:         http://github.com/ivan-m/haskell-docs/issues
 extra-source-files:
   src/Haskell/Docs.hs
   src/Haskell/Docs/Ghc.hs
@@ -128,4 +128,4 @@ test-suite test
 
 source-repository head
   type:        git
-  location:    git://github.com/chrisdone/haskell-docs.git
+  location:    git://github.com/ivan-m/haskell-docs.git
