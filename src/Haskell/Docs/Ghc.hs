@@ -86,6 +86,9 @@ showSDocForUser = Outputable.showSDocForUser
 #if __GLASGOW_HASKELL__ == 800
 showSDocForUser = Outputable.showSDocForUser
 #endif
+#if __GLASGOW_HASKELL__ == 802
+showSDocForUser = Outputable.showSDocForUser
+#endif
 
 -- | Set the import context.
 setImportContext :: ModuleName -> Ghc ()
