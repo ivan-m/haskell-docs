@@ -50,7 +50,7 @@ category:            Development
 build-type:          Simple
 Tested-With:         GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4,
                      GHC == 7.10.2, GHC == 8.0.2, GHC == 8.1.*,
-                     GHC == 8.2.2, GHC == 8.4.4
+                     GHC == 8.2.2, GHC == 8.4.4, GHC == 8.6.5
 cabal-version:       >=1.8
 Homepage:            http://github.com/ivan-m/haskell-docs
 Bug-Reports:         http://github.com/ivan-m/haskell-docs/issues
@@ -88,12 +88,15 @@ library
                      , cryptohash
                      , directory
                      , filepath
-                     , ghc >= 7.4 && < 8.5
+                     , ghc >= 7.4 && < 8.9
                      , ghc-paths
                      , monad-loops
                      , process
                      , text
                      , unordered-containers
+  if impl(ghc==8.6.*)
+     build-depends:   haddock-api==2.22.*
+                    , haddock-library == 1.7.0
   if impl(ghc==8.4.*)
      build-depends:   haddock-api==2.20.*
                     -- haddock-library 1.6.1 was deprecated
