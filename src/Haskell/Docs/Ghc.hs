@@ -74,19 +74,7 @@ showSDocForUser _ = Outputable.showSDocForUser
 #if __GLASGOW_HASKELL__ == 704
 showSDocForUser _ = Outputable.showSDocForUser
 #endif
-#if __GLASGOW_HASKELL__ == 706
-showSDocForUser = Outputable.showSDocForUser
-#endif
-#if __GLASGOW_HASKELL__ == 708
-showSDocForUser = Outputable.showSDocForUser
-#endif
-#if __GLASGOW_HASKELL__ == 710
-showSDocForUser = Outputable.showSDocForUser
-#endif
-#if __GLASGOW_HASKELL__ == 800
-showSDocForUser = Outputable.showSDocForUser
-#endif
-#if __GLASGOW_HASKELL__ == 802
+#if __GLASGOW_HASKELL__ >= 706
 showSDocForUser = Outputable.showSDocForUser
 #endif
 
