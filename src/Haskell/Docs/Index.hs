@@ -31,6 +31,7 @@ import qualified Data.Text.Encoding       as T
 import qualified Data.Text.IO             as T
 import           Documentation.Haddock
 import           GHC                      hiding (verbosity)
+import           GHC.Paths                (ghc_pkg)
 import           Name
 import           System.Directory
 import           System.Environment
@@ -160,4 +161,4 @@ getPkgFlags =
        Just uflags -> return uflags
        Nothing -> case lookup "GHC_PACKAGE_PATH" env of
            Just path -> return ("-no-user-pg-db" ++ "-pkg-db=" ++ path)
-           Nothing   -> readProcess "ghc-pkg" ["--version"] ""
+           Nothing   -> readProcess ghc_pkg ["--version"] ""
