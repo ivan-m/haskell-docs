@@ -75,7 +75,10 @@ generateIndex flags =
                                (pack pkg <> ":" <> pack modu) m)
                M.empty
                flatfile)
-  where (<>) = mappend
+#if !(MIN_VERSION_base (4,11,0))
+  where
+   (<>) = mappend
+#endif
 
 -- | Generate a flat file of all package, module, name combinations.
 generateFlatFile :: [String] -> IO [(String, String, String)]
@@ -112,7 +115,10 @@ saveIndex i =
      forM_ (M.toList i)
            (\(ident,modules) -> T.hPutStrLn h (ident <> " " <> modules))
      hClose h
-  where (<>) = mappend
+#if !(MIN_VERSION_base (4,11,0))
+  where
+   (<>) = mappend
+#endif
 
 -- | Filename to read/write index to.
 getIndexFilename :: IO FilePath

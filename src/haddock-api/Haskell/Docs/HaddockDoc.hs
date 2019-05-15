@@ -35,6 +35,9 @@ doc (DocExamples exs) = unlines (map formatExample exs)
 #if MIN_VERSION_haddock_api (2,17,0)
 doc (DocMathInline mth) = mth
 doc (DocMathDisplay mth) = mth
+#if MIN_VERSION_haddock_api (2,19,0)
+doc (DocTable _) = ""
+#endif
 #endif
 
 -- The header type is unexported, so this constructor is useless.
