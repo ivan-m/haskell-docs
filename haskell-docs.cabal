@@ -88,7 +88,7 @@ library
                      , cryptohash
                      , directory
                      , filepath
-                     , ghc >= 7.4 && < 8.9
+                     , ghc >= 7.4 && < 8.7
                      , ghc-paths
                      , monad-loops
                      , process
